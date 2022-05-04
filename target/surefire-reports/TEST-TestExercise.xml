@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite tests="3" failures="0" name="TestExercise" time="0.139" errors="3" skipped="0">
+  <properties>
+    <property name="idea.version" value="2022.1"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="java.vm.version" value="11.0.15+10-Ubuntu-0ubuntu0.20.04.1"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/java-11-openjdk-amd64/lib"/>
+    <property name="maven.multiModuleProjectDirectory" value="/home/rob/Documents/RedHat/trustyai-drools"/>
+    <property name="java.vm.vendor" value="Private Build"/>
+    <property name="java.vendor.url" value="Unknown"/>
+    <property name="guice.disable.misplaced.annotation.check" value="true"/>
+    <property name="path.separator" value=":"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="sun.os.patch.level" value="unknown"/>
+    <property name="user.country" value="GB"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="user.dir" value="/home/rob/Documents/RedHat/trustyai-drools"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="java.runtime.version" value="11.0.15+10-Ubuntu-0ubuntu0.20.04.1"/>
+    <property name="java.awt.graphicsenv" value="sun.awt.X11GraphicsEnvironment"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="line.separator" value="
+"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="os.name" value="Linux"/>
+    <property name="maven.ext.class.path" value="/snap/intellij-idea-ultimate/353/plugins/maven/lib/maven-event-listener.jar"/>
+    <property name="classworlds.conf" value="/snap/intellij-idea-ultimate/353/plugins/maven/lib/maven3/bin/m2.conf"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib"/>
+    <property name="maven.conf" value="/snap/intellij-idea-ultimate/353/plugins/maven/lib/maven3/conf"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="java.class.version" value="55.0"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="os.version" value="5.13.0-40-generic"/>
+    <property name="user.home" value="/home/rob"/>
+    <property name="user.timezone" value="Europe/London"/>
+    <property name="java.awt.printerjob" value="sun.print.PSPrinterJob"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.specification.version" value="11"/>
+    <property name="user.name" value="rob"/>
+    <property name="java.class.path" value="/snap/intellij-idea-ultimate/353/plugins/maven/lib/maven3/boot/plexus-classworlds-2.6.0.jar:/snap/intellij-idea-ultimate/353/plugins/maven/lib/maven3/boot/plexus-classworlds.license"/>
+    <property name="java.vm.specification.version" value="11"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher -Didea.version=2022.1 clean install"/>
+    <property name="java.home" value="/usr/lib/jvm/java-11-openjdk-amd64"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="awt.toolkit" value="sun.awt.X11.XToolkit"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="java.version" value="11.0.15"/>
+    <property name="securerandom.source" value="file:/dev/./urandom"/>
+    <property name="java.vendor" value="Private Build"/>
+    <property name="maven.home" value="/snap/intellij-idea-ultimate/353/plugins/maven/lib/maven3"/>
+    <property name="file.separator" value="/"/>
+    <property name="java.version.date" value="2022-04-19"/>
+    <property name="java.vendor.url.bug" value="Unknown"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="sun.desktop" value="gnome"/>
+    <property name="sun.cpu.isalist" value=""/>
+  </properties>
+  <testcase classname="TestExercise" name="explore" time="0.083">
+    <error message="Cannot find a default KieSession" type="java.lang.RuntimeException">java.lang.RuntimeException: Cannot find a default KieSession
+	at org.drools.compiler.kie.builder.impl.KieContainerImpl.findKieSessionModel(KieContainerImpl.java:546)
+	at org.drools.compiler.kie.builder.impl.KieContainerImpl.newKieSession(KieContainerImpl.java:589)
+	at org.drools.compiler.kie.builder.impl.KieContainerImpl.newKieSession(KieContainerImpl.java:519)
+	at org.drools.compiler.kie.builder.impl.KieContainerImpl.newKieSession(KieContainerImpl.java:502)
+	at TestExercise.explore(TestExercise.java:288)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:252)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:141)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:112)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.apache.maven.surefire.util.ReflectionUtils.invokeMethodWithArray(ReflectionUtils.java:189)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:165)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:85)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:115)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:75)
+</error>
+    <system-out>/home/rob/Documents/RedHat/trustyai-drools/target/test-classes:/home/rob/Documents/RedHat/trustyai-drools/target/classes:/home/rob/.m2/repository/joda-time/joda-time/2.2/joda-time-2.2.jar:/home/rob/.m2/repository/org/drools/drools-compiler/8.20.0.Beta/drools-compiler-8.20.0.Beta.jar:/home/rob/.m2/repository/org/drools/drools-drl-parser/8.20.0.Beta/drools-drl-parser-8.20.0.Beta.jar:/home/rob/.m2/repository/org/drools/drools-drl-extensions/8.20.0.Beta/drools-drl-extensions-8.20.0.Beta.jar:/home/rob/.m2/repository/org/drools/drools-wiring-api/8.20.0.Beta/drools-wiring-api-8.20.0.Beta.jar:/home/rob/.m2/repository/org/drools/drools-core/8.20.0.Beta/drools-core-8.20.0.Beta.jar:/home/rob/.m2/repository/org/drools/drools-wiring-static/8.20.0.Beta/drools-wiring-static-8.20.0.Beta.jar:/home/rob/.m2/repository/commons-codec/commons-codec/1.15/commons-codec-1.15.jar:/home/rob/.m2/repository/org/drools/drools-drl-ast/8.20.0.Beta/drools-drl-ast-8.20.0.Beta.jar:/home/rob/.m2/repository/org/drools/drools-kiesession/8.20.0.Beta/drools-kiesession-8.20.0.Beta.jar:/home/rob/.m2/repository/org/kie/kie-memory-compiler/8.20.0.Beta/kie-memory-compiler-8.20.0.Beta.jar:/home/rob/.m2/repository/org/drools/drools-ecj/8.20.0.Beta/drools-ecj-8.20.0.Beta.jar:/home/rob/.m2/repository/org/kie/kie-internal/8.20.0.Beta/kie-internal-8.20.0.Beta.jar:/home/rob/.m2/repository/org/kie/kie-util-xml/8.20.0.Beta/kie-util-xml-8.20.0.Beta.jar:/home/rob/.m2/repository/org/kie/kie-util-maven-support/8.20.0.Beta/kie-util-maven-support-8.20.0.Beta.jar:/home/rob/.m2/repository/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar:/home/rob/.m2/repository/org/slf4j/slf4j-api/1.7.30/slf4j-api-1.7.30.jar:/home/rob/.m2/repository/org/eclipse/jdt/core/compiler/ecj/4.4.2/ecj-4.4.2.jar:/home/rob/.m2/repository/org/jbpm/jbpm-bpmn2/7.68.0.Final/jbpm-bpmn2-7.68.0.Final.jar:/home/rob/.m2/repository/org/jbpm/jbpm-flow-builder/7.68.0.Final/jbpm-flow-builder-7.68.0.Final.jar:/home/rob/.m2/repository/org/kie/soup/kie-soup-project-datamodel-commons/7.68.0.Final/kie-soup-project-datamodel-commons-7.68.0.Final.jar:/home/rob/.m2/repository/org/kie/soup/kie-soup-project-datamodel-api/7.68.0.Final/kie-soup-project-datamodel-api-7.68.0.Final.jar:/home/rob/.m2/repository/org/jbpm/jbpm-flow/7.68.0.Final/jbpm-flow-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-mvel/7.68.0.Final/drools-mvel-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-serialization-protobuf/7.68.0.Final/drools-serialization-protobuf-7.68.0.Final.jar:/home/rob/.m2/repository/org/kie/soup/kie-soup-commons/7.68.0.Final/kie-soup-commons-7.68.0.Final.jar:/home/rob/.m2/repository/org/kie/kie-dmn-api/7.68.0.Final/kie-dmn-api-7.68.0.Final.jar:/home/rob/.m2/repository/org/kie/kie-dmn-feel/7.68.0.Final/kie-dmn-feel-7.68.0.Final.jar:/home/rob/.m2/repository/org/kie/kie-dmn-model/7.68.0.Final/kie-dmn-model-7.68.0.Final.jar:/home/rob/.m2/repository/org/antlr/antlr4-runtime/4.9.2/antlr4-runtime-4.9.2.jar:/home/rob/.m2/repository/com/github/javaparser/javaparser-core/3.23.1/javaparser-core-3.23.1.jar:/home/rob/.m2/repository/ch/obermuhlner/big-math/2.0.1/big-math-2.0.1.jar:/home/rob/.m2/repository/org/kie/kie-dmn-core/7.68.0.Final/kie-dmn-core-7.68.0.Final.jar:/home/rob/.m2/repository/org/kie/kie-dmn-backend/7.68.0.Final/kie-dmn-backend-7.68.0.Final.jar:/home/rob/.m2/repository/com/thoughtworks/xstream/xstream/1.4.19/xstream-1.4.19.jar:/home/rob/.m2/repository/io/github/x-stream/mxparser/1.2.2/mxparser-1.2.2.jar:/home/rob/.m2/repository/xmlpull/xmlpull/1.1.3.1/xmlpull-1.1.3.1.jar:/home/rob/.m2/repository/org/kie/soup/kie-soup-xstream/7.68.0.Final/kie-soup-xstream-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-core-reflective/7.68.0.Final/drools-core-reflective-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-ruleunit/7.68.0.Final/drools-ruleunit-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-canonical-model/7.68.0.Final/drools-canonical-model-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-model-compiler/7.68.0.Final/drools-model-compiler-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-mvel-compiler/7.68.0.Final/drools-mvel-compiler-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-mvel-parser/7.68.0.Final/drools-mvel-parser-7.68.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-alphanetwork-compiler/7.68.0.Final/drools-alphanetwork-compiler-7.68.0.Final.jar:/home/rob/.m2/repository/org/jpmml/pmml-model/1.5.1/pmml-model-1.5.1.jar:/home/rob/.m2/repository/org/jpmml/pmml-agent/1.5.1/pmml-agent-1.5.1.jar:/home/rob/.m2/repository/com/google/protobuf/protobuf-java/3.19.4/protobuf-java-3.19.4.jar:/home/rob/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.12.1/jackson-datatype-jsr310-2.12.1.jar:/home/rob/.m2/repository/org/mvel/mvel2/2.4.14.Final/mvel2-2.4.14.Final.jar:/home/rob/.m2/repository/org/kie/kie-api/8.20.0.Beta/kie-api-8.20.0.Beta.jar:/home/rob/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar:/home/rob/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar:/home/rob/.m2/repository/org/kie/kogito/explainability-core/1.20.0.Final/explainability-core-1.20.0.Final.jar:/home/rob/.m2/repository/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar:/home/rob/.m2/repository/org/apache/commons/commons-csv/1.8/commons-csv-1.8.jar:/home/rob/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.13.1/jackson-databind-2.13.1.jar:/home/rob/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.13.1/jackson-annotations-2.13.1.jar:/home/rob/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.13.1/jackson-core-2.13.1.jar:/home/rob/.m2/repository/org/optaplanner/optaplanner-quarkus/8.20.0.Final/optaplanner-quarkus-8.20.0.Final.jar:/home/rob/.m2/repository/io/quarkus/quarkus-core/2.7.3.Final/quarkus-core-2.7.3.Final.jar:/home/rob/.m2/repository/jakarta/annotation/jakarta.annotation-api/1.3.5/jakarta.annotation-api-1.3.5.jar:/home/rob/.m2/repository/jakarta/enterprise/jakarta.enterprise.cdi-api/2.0.2/jakarta.enterprise.cdi-api-2.0.2.jar:/home/rob/.m2/repository/jakarta/el/jakarta.el-api/3.0.3/jakarta.el-api-3.0.3.jar:/home/rob/.m2/repository/jakarta/interceptor/jakarta.interceptor-api/1.2.5/jakarta.interceptor-api-1.2.5.jar:/home/rob/.m2/repository/jakarta/ejb/jakarta.ejb-api/3.2.6/jakarta.ejb-api-3.2.6.jar:/home/rob/.m2/repository/jakarta/inject/jakarta.inject-api/1.0/jakarta.inject-api-1.0.jar:/home/rob/.m2/repository/io/quarkus/quarkus-ide-launcher/2.7.3.Final/quarkus-ide-launcher-2.7.3.Final.jar:/home/rob/.m2/repository/io/quarkus/quarkus-development-mode-spi/2.7.3.Final/quarkus-development-mode-spi-2.7.3.Final.jar:/home/rob/.m2/repository/io/smallrye/config/smallrye-config/2.9.1/smallrye-config-2.9.1.jar:/home/rob/.m2/repository/io/smallrye/config/smallrye-config-core/2.9.1/smallrye-config-core-2.9.1.jar:/home/rob/.m2/repository/org/eclipse/microprofile/config/microprofile-config-api/2.0.1/microprofile-config-api-2.0.1.jar:/home/rob/.m2/repository/io/smallrye/common/smallrye-common-annotation/1.10.0/smallrye-common-annotation-1.10.0.jar:/home/rob/.m2/repository/io/smallrye/common/smallrye-common-expression/1.10.0/smallrye-common-expression-1.10.0.jar:/home/rob/.m2/repository/io/smallrye/common/smallrye-common-function/1.10.0/smallrye-common-function-1.10.0.jar:/home/rob/.m2/repository/io/smallrye/common/smallrye-common-constraint/1.10.0/smallrye-common-constraint-1.10.0.jar:/home/rob/.m2/repository/io/smallrye/common/smallrye-common-classloader/1.10.0/smallrye-common-classloader-1.10.0.jar:/home/rob/.m2/repository/org/ow2/asm/asm/9.2/asm-9.2.jar:/home/rob/.m2/repository/io/smallrye/config/smallrye-config-common/2.9.1/smallrye-config-common-2.9.1.jar:/home/rob/.m2/repository/org/jboss/logging/jboss-logging/3.4.3.Final/jboss-logging-3.4.3.Final.jar:/home/rob/.m2/repository/org/jboss/logmanager/jboss-logmanager-embedded/1.0.9/jboss-logmanager-embedded-1.0.9.jar:/home/rob/.m2/repository/org/jboss/logging/jboss-logging-annotations/2.2.1.Final/jboss-logging-annotations-2.2.1.Final.jar:/home/rob/.m2/repository/org/jboss/threads/jboss-threads/3.4.2.Final/jboss-threads-3.4.2.Final.jar:/home/rob/.m2/repository/org/jboss/slf4j/slf4j-jboss-logmanager/1.1.0.Final/slf4j-jboss-logmanager-1.1.0.Final.jar:/home/rob/.m2/repository/org/graalvm/sdk/graal-sdk/21.3.1/graal-sdk-21.3.1.jar:/home/rob/.m2/repository/org/wildfly/common/wildfly-common/1.5.4.Final-format-001/wildfly-common-1.5.4.Final-format-001.jar:/home/rob/.m2/repository/io/quarkus/quarkus-bootstrap-runner/2.7.3.Final/quarkus-bootstrap-runner-2.7.3.Final.jar:/home/rob/.m2/repository/io/smallrye/common/smallrye-common-io/1.10.0/smallrye-common-io-1.10.0.jar:/home/rob/.m2/repository/io/quarkus/quarkus-fs-util/0.0.9/quarkus-fs-util-0.0.9.jar:/home/rob/.m2/repository/io/quarkus/quarkus-arc/2.7.3.Final/quarkus-arc-2.7.3.Final.jar:/home/rob/.m2/repository/io/quarkus/arc/arc/2.7.3.Final/arc-2.7.3.Final.jar:/home/rob/.m2/repository/jakarta/transaction/jakarta.transaction-api/1.3.3/jakarta.transaction-api-1.3.3.jar:/home/rob/.m2/repository/org/eclipse/microprofile/context-propagation/microprofile-context-propagation-api/1.2/microprofile-context-propagation-api-1.2.jar:/home/rob/.m2/repository/org/optaplanner/optaplanner-core/8.20.0.Final/optaplanner-core-8.20.0.Final.jar:/home/rob/.m2/repository/org/optaplanner/optaplanner-core-impl/8.20.0.Final/optaplanner-core-impl-8.20.0.Final.jar:/home/rob/.m2/repository/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1.jar:/home/rob/.m2/repository/io/micrometer/micrometer-core/1.8.3/micrometer-core-1.8.3.jar:/home/rob/.m2/repository/org/hdrhistogram/HdrHistogram/2.1.12/HdrHistogram-2.1.12.jar:/home/rob/.m2/repository/org/latencyutils/LatencyUtils/2.0.3/LatencyUtils-2.0.3.jar:/home/rob/.m2/repository/jakarta/xml/bind/jakarta.xml.bind-api/2.3.3/jakarta.xml.bind-api-2.3.3.jar:/home/rob/.m2/repository/jakarta/activation/jakarta.activation-api/1.2.2/jakarta.activation-api-1.2.2.jar:/home/rob/.m2/repository/org/glassfish/jaxb/jaxb-runtime/2.3.3-b02/jaxb-runtime-2.3.3-b02.jar:/home/rob/.m2/repository/org/glassfish/jaxb/txw2/2.3.3-b02/txw2-2.3.3-b02.jar:/home/rob/.m2/repository/com/sun/istack/istack-commons-runtime/3.0.10/istack-commons-runtime-3.0.10.jar:/home/rob/.m2/repository/com/sun/activation/jakarta.activation/1.2.1/jakarta.activation-1.2.1.jar:/home/rob/.m2/repository/org/optaplanner/optaplanner-constraint-streams/8.20.0.Final/optaplanner-constraint-streams-8.20.0.Final.jar:/home/rob/.m2/repository/org/drools/drools-engine/8.20.0.Beta/drools-engine-8.20.0.Beta.jar:/home/rob/.m2/repository/org/drools/drools-tms/8.20.0.Beta/drools-tms-8.20.0.Beta.jar:/home/rob/.m2/repository/org/optaplanner/optaplanner-constraint-drl/8.20.0.Final/optaplanner-constraint-drl-8.20.0.Final.jar:/home/rob/.m2/repository/org/jboss/jandex/2.4.2.Final/jandex-2.4.2.Final.jar:
+</system-out>
+  </testcase>
+  <testcase classname="TestExercise" name="testTrustyAILIME" time="0.042">
+    <error message="java.lang.RuntimeException: Cannot find a default KieSession" type="java.util.concurrent.ExecutionException">java.util.concurrent.ExecutionException: java.lang.RuntimeException: Cannot find a default KieSession
+	at java.base/java.util.concurrent.CompletableFuture.reportGet(CompletableFuture.java:395)
+	at java.base/java.util.concurrent.CompletableFuture.get(CompletableFuture.java:1999)
+	at TestExercise.testTrustyAILIME(TestExercise.java:464)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:252)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:141)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:112)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.apache.maven.surefire.util.ReflectionUtils.invokeMethodWithArray(ReflectionUtils.java:189)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:165)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:85)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:115)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:75)
+Caused by: java.lang.RuntimeException: Cannot find a default KieSession
+	at org.drools.compiler.kie.builder.impl.KieContainerImpl.findKieSessionModel(KieContainerImpl.java:546)
+	at org.drools.compiler.kie.builder.impl.KieContainerImpl.createKieSessionsPool(KieContainerImpl.java:527)
+	at org.drools.compiler.kie.builder.impl.KieContainerSessionsPoolImpl.createStatefulSessionPool(KieContainerSessionsPoolImpl.java:78)
+	at org.drools.kiesession.session.AbstractKieSessionsPool.lambda$getPool$0(AbstractKieSessionsPool.java:54)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1705)
+	at org.drools.kiesession.session.AbstractKieSessionsPool.getPool(AbstractKieSessionsPool.java:54)
+	at org.drools.compiler.kie.builder.impl.KieContainerSessionsPoolImpl.newKieSession(KieContainerSessionsPoolImpl.java:53)
+	at org.drools.compiler.kie.builder.impl.KieContainerSessionsPoolImpl.newKieSession(KieContainerSessionsPoolImpl.java:38)
+	at TestExercise.lambda$wrapTrip$1(TestExercise.java:224)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1700)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.exec(CompletableFuture.java:1692)
+	at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:290)
+	at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1020)
+	at java.base/java.util.concurrent.ForkJoinPool.scan(ForkJoinPool.java:1656)
+	at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1594)
+	at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:183)
+</error>
+    <system-out>Prediction 0 (1 pis) 
+</system-out>
+  </testcase>
+  <testcase classname="TestExercise" name="testTrustyAISHAP" time="0.014">
+    <error message="java.lang.RuntimeException: Cannot find a default KieSession" type="java.util.concurrent.ExecutionException">java.util.concurrent.ExecutionException: java.lang.RuntimeException: Cannot find a default KieSession
+	at java.base/java.util.concurrent.CompletableFuture.reportGet(CompletableFuture.java:395)
+	at java.base/java.util.concurrent.CompletableFuture.get(CompletableFuture.java:1999)
+	at TestExercise.testTrustyAISHAP(TestExercise.java:402)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:252)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:141)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:112)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.apache.maven.surefire.util.ReflectionUtils.invokeMethodWithArray(ReflectionUtils.java:189)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:165)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:85)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:115)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:75)
+Caused by: java.lang.RuntimeException: Cannot find a default KieSession
+	at org.drools.compiler.kie.builder.impl.KieContainerImpl.findKieSessionModel(KieContainerImpl.java:546)
+	at org.drools.compiler.kie.builder.impl.KieContainerImpl.createKieSessionsPool(KieContainerImpl.java:527)
+	at org.drools.compiler.kie.builder.impl.KieContainerSessionsPoolImpl.createStatefulSessionPool(KieContainerSessionsPoolImpl.java:78)
+	at org.drools.kiesession.session.AbstractKieSessionsPool.lambda$getPool$0(AbstractKieSessionsPool.java:54)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1705)
+	at org.drools.kiesession.session.AbstractKieSessionsPool.getPool(AbstractKieSessionsPool.java:54)
+	at org.drools.compiler.kie.builder.impl.KieContainerSessionsPoolImpl.newKieSession(KieContainerSessionsPoolImpl.java:53)
+	at org.drools.compiler.kie.builder.impl.KieContainerSessionsPoolImpl.newKieSession(KieContainerSessionsPoolImpl.java:38)
+	at TestExercise.lambda$wrapTrip$1(TestExercise.java:224)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1700)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.exec(CompletableFuture.java:1692)
+	at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:290)
+	at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1020)
+	at java.base/java.util.concurrent.ForkJoinPool.scan(ForkJoinPool.java:1656)
+	at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1594)
+	at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:183)
+</error>
+    <system-out>Prediction 0 (100 pis) 
+</system-out>
+  </testcase>
+</testsuite>
