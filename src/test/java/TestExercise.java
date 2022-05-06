@@ -6,6 +6,8 @@ import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.event.DefaultAgendaEventListener;
+import org.drools.core.event.DefaultProcessEventListener;
+import org.drools.core.event.DefaultRuleRuntimeEventListener;
 import org.drools.core.impl.InternalKnowledgeBase;
 import org.drools.core.reteoo.AccumulateNode;
 import org.drools.core.reteoo.AlphaNode;
@@ -21,13 +23,23 @@ import org.drools.core.reteoo.Sink;
 import org.drools.core.rule.EntryPointId;
 import org.drools.core.spi.BetaNodeFieldConstraint;
 import org.drools.core.spi.ObjectType;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.nio.Attribute;
+import org.jgrapht.nio.DefaultAttribute;
+import org.jgrapht.nio.dot.DOTExporter;
 import org.kie.api.definition.rule.Rule;
 import org.drools.mvel.MVELConstraint;
 import org.junit.Test;
 import org.kie.api.KieBase;
 import org.kie.api.KieServices;
+import org.kie.api.event.process.ProcessNodeTriggeredEvent;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.BeforeMatchFiredEvent;
+import org.kie.api.event.rule.ObjectInsertedEvent;
+import org.kie.api.event.rule.ObjectUpdatedEvent;
+import org.kie.api.event.rule.RuleFlowGroupActivatedEvent;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieContainerSessionsPool;
 import org.kie.api.runtime.KieSession;
@@ -49,12 +61,18 @@ import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
 import org.kie.kogito.explainability.utils.CompositeFeatureUtils;
 
+import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -168,68 +186,6 @@ public class TestExercise {
 
 
     int predictions = 0;
-//    public PredictionProvider wrapTrip(Trip trip) {
-//        return inputs -> supplyAsync(() -> {
-//            System.out.printf("Prediction %d (%d pis) %n", predictions, inputs.size());
-//            predictions += 1;
-//            List<PredictionOutput> predictionOutputs = new ArrayList<>();
-//            for (PredictionInput pi : inputs) {
-//                KieSession session = pool.newKieSession( "ksession-rules");
-//                CostCalculationRequest request = new CostCalculationRequest();
-//                request.setTrip(trip);
-//                request.setOrder(orderFromPredictionInput(pi));
-//                this.insertIntoSession(session, request);
-//
-//                // timeout in case of hanging processes
-//                ExecutorService executor = Executors.newCachedThreadPool();
-//                Callable<Object> task = () -> session.startProcess("P1");
-//                Future<Object> future = executor.submit(task);
-//
-//                List<Output> outputs = new ArrayList<>();
-//                try {
-//                    future.get(5, TimeUnit.SECONDS);
-//                } catch (TimeoutException e) {
-//                    System.out.println("The following PredictionInput timed out:");
-//                    System.out.println(pi);
-//                    outputs.add(new Output("Total Cost", Type.NUMBER, new Value(0.), 0.));
-//                } catch (ExecutionException | InterruptedException e) {
-//                    System.out.println("The following PredictionInput errored:");
-//                    System.out.println(pi);
-//                    outputs.add(new Output("Total Cost", Type.NUMBER, new Value(0.), 0.));
-//                    //throw new RuntimeException(e);
-//                }
-//
-//                // if we haven't timed out:
-//                int i = session.fireAllRules();
-//                double taxCost = 0;
-//                double handlingCost = 0;
-//                double shippingCost = 0;
-//                for (CostElement ce : request.getCostElements()) {
-//                    if (ce instanceof TaxesCostElement) {
-//                        taxCost += ce.getAmount();
-//                    } else if (ce instanceof HandlingCostElement) {
-//                        handlingCost += ce.getAmount();
-//                    } else {
-//                        shippingCost += ce.getAmount();
-//                    }
-//                }
-////                outputs.add(new Output("Tax Cost", Type.NUMBER, new Value(taxCost), 1.0));
-////                outputs.add(new Output("Handling Cost", Type.NUMBER, new Value(handlingCost), 1.0));
-////                outputs.add(new Output("Shipping Cost", Type.NUMBER, new Value(shippingCost), 1.0));
-//                outputs.add(new Output("Total Cost", Type.NUMBER, new Value(taxCost+handlingCost+shippingCost), 1.0));
-//                predictionOutputs.add(new PredictionOutput(outputs));
-//                session.dispose();
-//            }
-////            RealMatrix piMatrix = MatrixUtilsExtensions.matrixFromPredictionInput(
-////                    inputs.stream()
-////                            .map(pi -> new PredictionInput(CompositeFeatureUtils.flattenFeatures(pi.getFeatures())))
-////                            .collect(Collectors.toList()));
-////            RealMatrix poMatrix = MatrixUtilsExtensions.matrixFromPredictionOutput(predictionOutputs);
-////            System.out.println(matrixPrettyPrint(piMatrix));
-////            System.out.println(matrixPrettyPrint(poMatrix));
-//            return predictionOutputs;
-//        });
-//    }
 
     public PredictionProvider wrapTrip(Trip trip) {
         return inputs -> supplyAsync(() -> {
@@ -294,59 +250,43 @@ public class TestExercise {
     }
 
     class Node {
-        List<Node> descendants;
         String type;
-        public Node(List<Node> descendants, String type){
-            this.descendants = descendants;
+        int id;
+
+        public Node(String type, int id){
             this.type = type;
+            this.id = id;
         }
 
-        public Node(String type){
-            this.descendants = new ArrayList<>();
-            this.type = type;
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Node node = (Node) o;
+            return id == node.id && Objects.equals(type, node.type);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, id);
         }
 
         @Override
         public String toString(){
-            List<Integer> parentDepths = new ArrayList<>();
-            return toString(1, parentDepths);
+            return this.type;
         }
 
-        public String toString(int depth, List<Integer> parentDepths) {
-            StringBuilder result = new StringBuilder();
-            result.append(this.type);
-
-            String arrows = "↳➔";
-
-            for (int descIdx=0; descIdx<descendants.size(); descIdx++) {
-                StringBuilder spacer = new StringBuilder();
-                for (int i=0; i<depth; i++){
-                    if (parentDepths.contains(i)){
-                        spacer.append("｜ ");
-                    } else {
-                        spacer.append("  ");
-                    }
-                }
-                List<Integer> currentDepths = new ArrayList<>(parentDepths);
-                if (descIdx != descendants.size()-1){
-                    currentDepths.add(depth);
-                }
-                spacer.append(descendants.size()>1 ? "｜-➔ " : "  ↳ ");
-                result.append("\n").append(spacer).append(descendants.get(descIdx).toString(depth+1, currentDepths));
-            }
-            return result.toString();
-        }
     }
 
 
     public void parseSinks(Sink[] sinks, List<FactHandle> relevantFactHandles,
-                           InternalWorkingMemory internalWorkingMemory, Map<String, Value> features, Node parent, RuleTracker ruleTracker){
+                           InternalWorkingMemory internalWorkingMemory, Map<String, Value> features, Node parent, Graph<Node, DefaultEdge> graph, RuleTracker ruleTracker){
         for (Sink sink : sinks ){
             Node subNode;
             if (sink instanceof AlphaNode){
                 AlphaNode node = (AlphaNode) sink;
                 MVELConstraint mvelConstraint = (MVELConstraint) node.getConstraint();
-                subNode = new Node("Alpha "+ mvelConstraint.getExpression());
+                subNode = new Node("Alpha "+ mvelConstraint.getExpression(), node.getId());
 
                 for (int i=0; i<relevantFactHandles.size(); i++){
                     FactHandle fh = relevantFactHandles.get(i);
@@ -356,7 +296,8 @@ public class TestExercise {
                     features.put(featureName, new Value(fieldValue));
                     boolean conditionTrue = mvelConstraint.isAllowed((InternalFactHandle) fh, internalWorkingMemory);
                 }
-                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, ruleTracker);
+                graph.addVertex(subNode);
+                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, graph, ruleTracker);
             } else if (sink instanceof NotNode){
                 NotNode node = (NotNode) sink;
                 StringBuilder constraintNames = new StringBuilder();
@@ -364,84 +305,110 @@ public class TestExercise {
                     MVELConstraint mvelConstraint = (MVELConstraint) bnfc;
                     constraintNames.append(mvelConstraint.getExpression());
                 };
-                subNode = new Node("Not "+ constraintNames);
-                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, ruleTracker);
+                subNode = new Node("Not "+ constraintNames, node.getId());
+                graph.addVertex(subNode);
+                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, graph, ruleTracker);
             } else if (sink instanceof JoinNode) {
                 JoinNode node = (JoinNode) sink;
-                subNode = new Node("Join");
-                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, ruleTracker);
+                subNode = new Node("Join", node.getId());
+                graph.addVertex(subNode);
+                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, graph, ruleTracker);
             } else if (sink instanceof AccumulateNode) {
                 AccumulateNode node = (AccumulateNode) sink;
-                subNode = new Node("Accumulate");
-                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, ruleTracker);
+                subNode = new Node("Accumulate", node.getId());
+                graph.addVertex(subNode);
+                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode,graph,  ruleTracker);
             } else if (sink instanceof LeftInputAdapterNode) {
                 LeftInputAdapterNode node = (LeftInputAdapterNode) sink;
-                subNode = new Node("LeftInput");
+                subNode = new Node("LeftInput: "+ node.getObjectType().getClassName(), node.getId());
+                graph.addVertex(subNode);
                 for (int i=0; i<relevantFactHandles.size(); i++){
                     FactHandle fh = relevantFactHandles.get(i);
                 }
-                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, ruleTracker);
+                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, graph, ruleTracker);
             }  else if (sink instanceof RightInputAdapterNode) {
                 RightInputAdapterNode node = (RightInputAdapterNode) sink;
-                subNode = new Node("RightInput");
+                subNode = new Node("RightInput: "+node.getLeftTupleSource().getObjectType().getClassName(), node.getId());
+                graph.addVertex(subNode);
                 for (int i=0; i<relevantFactHandles.size(); i++){
                     FactHandle fh = relevantFactHandles.get(i);
                 }
-                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, ruleTracker);
+                parseSinks(node.getSinks(), relevantFactHandles, internalWorkingMemory, features, subNode, graph, ruleTracker);
             } else if (sink instanceof RuleTerminalNode) {
                 RuleTerminalNode node = (RuleTerminalNode) sink;
-                subNode = new Node("Terminal: "+node.getRule().getName()+" caused: "+ruleTracker.differences.get(node.getRule()));
+                subNode = new Node("Terminal: "+node.getRule().getName()+" caused: "+ruleTracker.differences.get(node.getRule()), node.getId());
+                graph.addVertex(subNode);
             } else {
-                subNode = new Node("Other: "+sink.getClass().getName());
+                subNode = new Node("Other: "+sink.getClass().getName(), sink.getId());
+                graph.addVertex(subNode);
             }
-            parent.descendants.add(subNode);
+            graph.addEdge(parent, subNode);
         }
     }
 
-    public static HashMap<String, Object> beanProperties(final Object bean, Set<String> targets, Set<String> containers, String prefix) {
-        final HashMap<String, Object> result = new HashMap<String, Object>();
-        //System.out.println(prefix+": "+bean.toString());
+
+
+    public static HashMap<String, Object> beanProperties(final Object bean, Set<String> targets, Set<String> containers, String prefix, boolean verbose) {
+        final HashMap<String, Object> result = new HashMap<>();
+        String name = prefix.equals("") ? bean.getClass().getName() : prefix;
+
+        // check if object itself is a "base" type
+        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean){
+            if (verbose) {System.out.printf("\t %s=%s, primitive? %b", name, bean, true);}
+            result.put(name, bean);
+            if (verbose){System.out.println("...adding to result");}
+            return result;
+        }
+
+        // otherwise investigate its contents
+        if (verbose){ System.out.println("Exploring "+ name);}
         try {
             final PropertyDescriptor[] propertyDescriptors = Introspector.getBeanInfo(bean.getClass(), Object.class).getPropertyDescriptors();
             for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
                 final Method readMethod = propertyDescriptor.getReadMethod();
+
+                // if there's getters:
                 if (readMethod != null) {
                     Object read = readMethod.invoke(bean, (Object[]) null);
-                    String name = (prefix.equals("") ? bean.getClass().getName() + "." : prefix + ".") + propertyDescriptor.getName();
+                    name += "." + propertyDescriptor.getName();
                     boolean inTargets = targets.stream().anyMatch(propertyDescriptor.getName()::contains);
                     boolean inContainers = containers.stream().anyMatch(propertyDescriptor.getName()::contains);
-//                    System.out.printf("\t %s=%s, primitive? %b, %s in Targets? %b, %s in Containers? %b",
-//                            name, read.toString(),
-//                            (read instanceof Number || read instanceof String || read instanceof Boolean),
-//                            propertyDescriptor.getName(), inTargets,
-//                            propertyDescriptor.getName(), inContainers);
-                    if ((read instanceof Number || read instanceof String || read instanceof Boolean) && inTargets) {
+                    if (verbose) {
+                        System.out.printf("\t %s=%s, primitive? %b, %s in Targets? %b, %s in Containers? %b",
+                                name, read.toString(),
+                                (read instanceof Number || read instanceof String || read instanceof Boolean),
+                                propertyDescriptor.getName(), inTargets,
+                                propertyDescriptor.getName(), inContainers);
+                    }
+
+                    // if the get'ted object is a 'base' type:
+                    if (read instanceof Number || read instanceof String || read instanceof Boolean) {
                         result.put(name, read);
-                        //System.out.println("...adding to result");
-                    } else if (read instanceof Iterable && inContainers ) {
+                        if (verbose){System.out.println("...adding to result");}
+                    } else if (read instanceof Iterable) { //is is an iterable object?
                         int i = 0;
-                        //System.out.printf("%n=== recursing %s ======================%n", name);
+                        if (verbose){System.out.printf("%n=== recursing %s ======================%n", name);}
                         for (Object o : (Iterable<?>) read) {
                             beanProperties(
                                     o,
                                     targets,
                                     containers,
-                                    name + "[" + i + "]")
+                                    name + "[" + i + "]",
+                                    verbose)
                                     .forEach(result::putIfAbsent);
                             i++;
                         }
-                        // System.out.println("=====================================\n");
-                    } else if (inContainers) {
-                        //System.out.println("...unpacking ======================");
+                        if (verbose){System.out.println("=== end recursion ==================================\n");}
+                    } else { // if the object is not base or iterable, but is a specified container:
+                        if (verbose){System.out.println("...unpacking ======================");}
                         beanProperties(
                                 read,
                                 targets,
                                 containers,
-                                name + "." + propertyDescriptor.getName())
+                                name + "." + propertyDescriptor.getName(),
+                                verbose)
                                 .forEach(result::putIfAbsent);
-                        //System.out.println("=====================================");
-                    } else {
-                        //System.out.println();
+                        if (verbose){System.out.println("=== end unpack ==================================");}
                     }
                 }
             }
@@ -458,60 +425,61 @@ public class TestExercise {
         HashMap<Rule, Object> differences = new HashMap<>();
         Set<String> outputTargets;
         Set<String> outputContainers;
+        Set<String> excludedRules;
 
-        public RuleTracker(Set<String> outputTargets, Set<String> outputContainers) {
+        public RuleTracker(Set<String> outputTargets, Set<String> outputContainers, Set<String> excludedRules) {
             this.outputTargets = outputTargets;
             this.outputContainers = outputContainers;
-        }
-
-        @Override
-        public void beforeMatchFired(BeforeMatchFiredEvent event) {
-            super.beforeMatchFired(event);
-            List<InternalFactHandle> eventFactHandles = (List<InternalFactHandle>) event.getMatch().getFactHandles();
-            for (InternalFactHandle fh : eventFactHandles) {
-                beforeHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this.outputTargets, this.outputContainers, ""));
-            }
+            this.excludedRules = excludedRules;
         }
 
         @Override
         public void afterMatchFired(AfterMatchFiredEvent event) {
             super.afterMatchFired(event);
-            List<InternalFactHandle> eventFactHandles = (List<InternalFactHandle>) event.getMatch().getFactHandles();
-            for (InternalFactHandle fh : eventFactHandles) {
-                afterHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), outputTargets, this.outputContainers, ""));
-            }
-
-            Set<String> keySets = new HashSet<>(afterHashes.keySet());
-            keySets.addAll(beforeHashes.keySet());
-
-            for (String key : new ArrayList<>(keySets)) {
-                if (!beforeHashes.containsKey(key)) {
-                    this.differences.put(event.getMatch().getRule(), afterHashes.get(key));
+            if (excludedRules.stream().noneMatch(event.getMatch().getRule().getName()::contains)) {
+                boolean verbose = event.getMatch().getRule().getName().equals("CalculateTotal");
+                List<InternalFactHandle> eventFactHandles = (List<InternalFactHandle>) event.getMatch().getFactHandles();
+                for (InternalFactHandle fh : eventFactHandles) {
+                    afterHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), outputTargets, this.outputContainers, "", false));
                 }
-                if (!afterHashes.containsKey(key)) {
-                    this.differences.put(event.getMatch().getRule(), beforeHashes.get(key));
+                if (true || verbose){
+                    System.out.println(afterHashes);
+                    System.out.println();
                 }
-                if (beforeHashes.containsKey(key) && afterHashes.containsKey(key)) {
-                    HashMap<String, Object> afterValues = afterHashes.get(key);
-                    HashMap<String, Object> beforeValues = beforeHashes.get(key);
 
-                    Set<String> objectKeySets = new HashSet<>(afterValues.keySet());
-                    objectKeySets.addAll(new ArrayList<>(beforeValues.keySet()));
 
-                    for (String objectKey : objectKeySets) {
-                        if (!beforeValues.containsKey(objectKey)) {
-                            this.differences.put(event.getMatch().getRule(), afterValues.get(objectKey));
-                        }
-                        if (!afterValues.containsKey(objectKey)) {
-                            this.differences.put(event.getMatch().getRule(), beforeValues.get(objectKey));
-                            if (beforeValues.containsKey(objectKey) && afterValues.containsKey(objectKey)) {
-                                if (!beforeValues.get(objectKey).equals(afterValues.get(objectKey))) {
-                                    this.differences.put(event.getMatch().getRule(), "before: " + beforeValues.get(objectKey) + ", after: " + afterValues.get(objectKey));
+                Set<String> keySets = new HashSet<>(afterHashes.keySet());
+                keySets.addAll(beforeHashes.keySet());
+
+                for (String key : new ArrayList<>(keySets)) {
+                    if (!beforeHashes.containsKey(key)) {
+                        this.differences.put(event.getMatch().getRule(), afterHashes.get(key));
+                    }
+                    if (!afterHashes.containsKey(key)) {
+                        this.differences.put(event.getMatch().getRule(), beforeHashes.get(key));
+                    }
+                    if (beforeHashes.containsKey(key) && afterHashes.containsKey(key)) {
+                        HashMap<String, Object> afterValues = afterHashes.get(key);
+                        HashMap<String, Object> beforeValues = beforeHashes.get(key);
+
+                        Set<String> objectKeySets = new HashSet<>(afterValues.keySet());
+                        objectKeySets.addAll(new ArrayList<>(beforeValues.keySet()));
+
+                        for (String objectKey : objectKeySets) {
+                            if (!beforeValues.containsKey(objectKey)) {
+                                this.differences.put(event.getMatch().getRule(), afterValues.get(objectKey));
+                            }
+                            if (!afterValues.containsKey(objectKey)) {
+                                this.differences.put(event.getMatch().getRule(), beforeValues.get(objectKey));
+                                if (beforeValues.containsKey(objectKey) && afterValues.containsKey(objectKey)) {
+                                    if (!beforeValues.get(objectKey).equals(afterValues.get(objectKey))) {
+                                        this.differences.put(event.getMatch().getRule(), "before: " + beforeValues.get(objectKey) + ", after: " + afterValues.get(objectKey));
+                                    }
                                 }
                             }
+                            beforeHashes.remove(key);
+                            afterHashes.remove(key);
                         }
-                        beforeHashes.remove(key);
-                        afterHashes.remove(key);
                     }
                 }
             }
@@ -522,12 +490,18 @@ public class TestExercise {
     @Test
     public void explore() {
         KieSession session = kieContainer.newKieSession("ksession-rules");
+
         Set<String> outputTargets = new HashSet<>();
         outputTargets.add("amount");
+        outputTargets.add("Total");
         Set<String> outputContainers = new HashSet<>();
         outputContainers.add("costElements");
         outputContainers.add("CostElement");
-        RuleTracker ruleTracker = new RuleTracker(outputTargets, outputContainers);
+
+        Set<String> excludedRules = new HashSet<>();
+        excludedRules.add("Create Pallet");
+
+        RuleTracker ruleTracker = new RuleTracker(outputTargets, outputContainers, excludedRules);
         session.addEventListener(ruleTracker);
         //session.addEventListener(new DefaultRuleRuntimeEventListener());
         KieBase kbase = session.getKieBase();
@@ -551,15 +525,16 @@ public class TestExercise {
         Map<String, Value> features = new HashMap<>();
         Map<String, Double> featureWeighting = new HashMap<>();
 
-        Node graph = new Node("Head");
+        Graph<Node, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         for (Map.Entry<EntryPointId, EntryPointNode> entryPointSet : rete.getEntryPointNodes().entrySet()){
             EntryPointNode epn = entryPointSet.getValue();
-            Node entrypoint = new Node("Entrypoint");
+            Node entrypoint = new Node("Entrypoint", epn.getId());
+            graph.addVertex(entrypoint);
 
             for (Map.Entry<ObjectType, ObjectTypeNode> objectSet : epn.getObjectTypeNodes().entrySet()){
                 ObjectTypeNode objectTypeNode = objectSet.getValue();
-                Node objectNode = new Node("Object " + objectTypeNode.getObjectType().getClassName());
+                Node objectNode = new Node("Object " + objectTypeNode.getObjectType().getClassName(), objectTypeNode.getId());
                 List<FactHandle> relevantFactHandles = new ArrayList<>();
                 for (FactHandle fh : factHandles){
                     DefaultFactHandle dfh = (DefaultFactHandle) fh;
@@ -567,15 +542,28 @@ public class TestExercise {
                         relevantFactHandles.add(fh);
                     }
                 }
-                parseSinks(objectTypeNode.getSinks(), relevantFactHandles, internalWorkingMemory, features, objectNode, ruleTracker);
-                entrypoint.descendants.add(objectNode);
+                graph.addVertex(objectNode);
+                parseSinks(objectTypeNode.getSinks(), relevantFactHandles, internalWorkingMemory, features, objectNode, graph, ruleTracker);
+                graph.addEdge(entrypoint, objectNode);
             }
-            graph.descendants.add(entrypoint);
         }
-        System.out.println(graph);
+
+        //printGraph(graph);
         System.out.println(features);
     }
 
+    public void printGraph(Graph<Node, DefaultEdge> graph){
+        DOTExporter<Node, DefaultEdge> exporter =
+                new DOTExporter<>(v -> Integer.toString(v.id));
+        exporter.setVertexAttributeProvider((v) -> {
+            Map<String, Attribute> map = new LinkedHashMap<>();
+            map.put("label", DefaultAttribute.createAttribute(v.toString()));
+            return map;
+        });
+        Writer writer = new StringWriter();
+        exporter.exportGraph(graph, writer);
+        System.out.println(writer.toString());
+    }
 
 
     public PredictionProvider flattenedModel(PredictionProvider originalModel, List<Feature> originalFeatures){
@@ -766,8 +754,7 @@ public class TestExercise {
                 .withAdaptiveVariance(true);
         LimeExplainer le = new LimeExplainer(config);
         Map<String, Saliency> explanation = le.explainAsync(prediction, model).get();
-        for (Map.Entry<String, Saliency> item : explanation.entrySet()){
-            System.out.println(item.getKey());
+        for (Map.Entry<String, Saliency> item : explanation.entrySet()){System.out.println(item.getKey());
             System.out.println(item.getValue());
         }
     }
