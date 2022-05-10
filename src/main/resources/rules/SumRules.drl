@@ -69,4 +69,7 @@ ruleflow-group "total"
 //		System.out.println("TotalTransport="+$totalTransport);
 //		System.out.println("TotalTaxes="+$totalTaxes);
 //		System.out.println("TotalHandling="+$totalHandling);
+        $c.setTotalTransportCost((double)$totalTransport);
+        $c.setTotalTaxCost((double)$totalTaxes);
+        $c.setTotalHandlingCost((double)$totalHandling);
 end;

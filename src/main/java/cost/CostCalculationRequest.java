@@ -11,6 +11,16 @@ public class CostCalculationRequest {
     private List<Pallet> pallets = new ArrayList<Pallet>();
     private List<CostElement> costElements = new ArrayList<CostElement>();
 
+    private double totalTaxCost;
+    private double totalHandlingCost;
+    private double totalTransportCost;
+
+    public double getTotalCost() {
+        return totalCost;
+    }
+
+    private double totalCost;
+
     public Order getOrder() {
         return order;
     }
@@ -46,5 +56,31 @@ public class CostCalculationRequest {
         this.costElements = costElements;
     }
 
+    public double getTotalTaxCost() {
+        return totalTaxCost;
+    }
+
+    public void setTotalTaxCost(double totalTaxCost) {
+        this.totalTaxCost = totalTaxCost;
+        this.totalCost += totalTaxCost;
+    }
+
+    public double getTotalHandlingCost() {
+        return totalHandlingCost;
+    }
+
+    public void setTotalHandlingCost(double totalHandlingCost) {
+        this.totalHandlingCost = totalHandlingCost;
+        this.totalCost += totalHandlingCost;
+    }
+
+    public double getTotalTransportCost() {
+        return totalTransportCost;
+    }
+
+    public void setTotalTransportCost(double totalTransportCost) {
+        this.totalTransportCost = totalTransportCost;
+        this.totalCost += totalTransportCost;
+    }
 
 }
