@@ -37,13 +37,22 @@ import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.BeforeMatchFiredEvent;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.kie.kogito.explainability.local.counterfactual.CounterfactualConfig;
+import org.kie.kogito.explainability.local.counterfactual.CounterfactualExplainer;
+import org.kie.kogito.explainability.local.counterfactual.CounterfactualResult;
+import org.kie.kogito.explainability.local.counterfactual.SolverConfigBuilder;
+import org.kie.kogito.explainability.model.CounterfactualPrediction;
 import org.kie.kogito.explainability.model.Feature;
 import org.kie.kogito.explainability.model.Output;
+import org.kie.kogito.explainability.model.Prediction;
 import org.kie.kogito.explainability.model.PredictionInput;
 import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
 import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
+import org.optaplanner.core.config.solver.EnvironmentMode;
+import org.optaplanner.core.config.solver.SolverConfig;
+import org.optaplanner.core.config.solver.termination.TerminationConfig;
 
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -66,7 +75,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -759,8 +771,12 @@ public class TestExercise {
 
                 if (outputTargets !=  null){
                     for (Pair<Rule, String> outputTarget : outputTargets) {
-                        if (event.getMatch().getRule() == outputTarget.getFirst() && differences.get(outputTarget.getFirst()).containsKey(outputTarget.getSecond())) {
-                            this.addDesiredOutput(outputTarget, differences.get(outputTarget.getFirst()).get(outputTarget.getSecond()).getSecond());
+                        if (event.getMatch().getRule() == outputTarget.getFirst()){
+                            if (differences.get(outputTarget.getFirst()).containsKey(outputTarget.getSecond())) {
+                                this.addDesiredOutput(outputTarget, differences.get(outputTarget.getFirst()).get(outputTarget.getSecond()).getSecond());
+                            } else {
+                                this.addDesiredOutput(outputTarget, null);
+                            }
                         }
                     }
                 }
@@ -907,11 +923,11 @@ public class TestExercise {
             this.featureWriterFilters = filters;
         }
 
-        public HashMap<Feature, WriterContainer> featureExtractor() {
-            List<Object> inputs = this.inputGenerator.get();
+        public HashMap<Feature, WriterContainer> featureExtractor(List<Object> inputs) {
             HashMap<Feature, WriterContainer> fs = new HashMap<>();
-            for (Object input  : inputs) {
-                String rawName = input.getClass().getName() + "_" + input.hashCode();
+            for (int i=0; i<inputs.size(); i++) {
+                Object input = inputs.get(i);
+                String rawName = input.getClass().getName() + "_"+i;
                 HashMap<String, WriterContainer> writers = beanWriteProperties(input, false);
                 for (Map.Entry<String, WriterContainer> entry : writers.entrySet()){
                     String featureName = rawName+"_"+entry.getKey();
@@ -1006,12 +1022,16 @@ public class TestExercise {
             session.startProcess("P1");
             session.fireAllRules();
             session.dispose();
+            System.out.println("desiredout: "+ruleTracker.desiredOutputs.values());
             return new PredictionOutput(new ArrayList<>(ruleTracker.desiredOutputs.values()));
         }
 
         public PredictionProvider wrap(){
             return inputs -> supplyAsync(() -> {
-                HashMap<Feature, WriterContainer> featureWriterMap = featureExtractor();
+                List<Object> droolsInputs = this.inputGenerator.get();
+                System.out.println(((CostCalculationRequest) droolsInputs.get(0)).getOrder().getOrderLines().get(0));
+                System.out.println(inputs.get(0).getFeatures());
+                HashMap<Feature, WriterContainer> featureWriterMap = featureExtractor(droolsInputs);
                 List<PredictionOutput> outputs = new LinkedList<>();
                 for (PredictionInput predictionInput : inputs){
                     for (Feature f : predictionInput.getFeatures()){
@@ -1029,13 +1049,37 @@ public class TestExercise {
                     }
                     outputs.add(runSession());
                 }
+                System.out.println(((CostCalculationRequest) droolsInputs.get(0)).getOrder().getOrderLines().get(0));
                 return outputs;
             });
         }
     }
 
+    private CounterfactualResult runCounterfactualSearch(Long randomSeed, List<Output> goal,
+                                                         List<Feature> features,
+                                                         PredictionProvider model,
+                                                         double goalThresold) throws InterruptedException, ExecutionException, TimeoutException {
+        final TerminationConfig terminationConfig = new TerminationConfig().withScoreCalculationCountLimit(30_000L);
+        final SolverConfig solverConfig = SolverConfigBuilder
+                .builder().withTerminationConfig(terminationConfig).build();
+        solverConfig.setRandomSeed(randomSeed);
+        solverConfig.setEnvironmentMode(EnvironmentMode.REPRODUCIBLE);
+        final CounterfactualConfig counterfactualConfig = new CounterfactualConfig();
+        counterfactualConfig.withSolverConfig(solverConfig).withGoalThreshold(goalThresold);
+        final CounterfactualExplainer explainer = new CounterfactualExplainer(counterfactualConfig);
+        final PredictionInput input = new PredictionInput(features);
+        PredictionOutput output = new PredictionOutput(goal);
+        Prediction prediction =
+                new CounterfactualPrediction(input,
+                        output,
+                        null,
+                        UUID.randomUUID(),
+                        null);
+        return explainer.explainAsync(prediction, model)
+                .get(10L, TimeUnit.MINUTES);
+    }
     @Test
-    public void autowrapper() throws ExecutionException, InterruptedException, InvocationTargetException, IllegalAccessException, InstantiationException, NoSuchMethodException {
+    public void autowrapper() throws ExecutionException, InterruptedException, TimeoutException {
         // build all objects inserted into the model
         Supplier<List<Object>> objectSupplier = () -> {
             Trip trip = getDefaultTrip();
@@ -1048,17 +1092,21 @@ public class TestExercise {
 
         DroolsWrapper droolsWrapper = new DroolsWrapper("ksession-rules", objectSupplier);
         droolsWrapper.setFeatureExtractorFilters(List.of("numberItems", "weight"));
-        PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor().keySet()));
-        for (Feature f: samplePI.getFeatures()){
-            f.getValue()
-        }
+        PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
         droolsWrapper.setExcludedOutputFields(
                 Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
                         .collect(Collectors.toSet()));
-        droolsWrapper.generateOutputCandidates(true);
+        droolsWrapper.generateOutputCandidates(false);
         droolsWrapper.selectOutputIndecesFromCandidates(List.of(19));
         PredictionProvider wrappedModel = droolsWrapper.wrap();
-        System.out.println(wrappedModel.predictAsync(List.of(samplePI)).get().get(0).getOutputs());
+
+        List<Output> goal = new ArrayList<>();
+        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(1000000.), 1.0));
+        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .01);
+        System.out.println(result.getFeatures());
+        System.out.println(result.isValid());
+        System.out.println(result.getOutput().get(0).getOutputs());
+
     }
 
     public void printGraph(Graph<GraphNode, DefaultEdge> graph){
