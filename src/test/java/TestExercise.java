@@ -87,177 +87,9 @@ public class TestExercise {
     Random rn = new Random(0);
     KieServices ks = KieServices.Factory.get();
     KieContainer kieContainer = ks.getKieClasspathContainer();
-    KieContainerSessionsPool pool = kieContainer.newKieSessionsPool(100);
-
-    private void insertIntoSession(KieSession sessionStatefull, CostCalculationRequest request) {
-        sessionStatefull.insert(request);
-        if (request.getOrder() != null) {
-            sessionStatefull.insert(request.getOrder());
-            for (OrderLine orderLine : request.getOrder().getOrderLines()) {
-                sessionStatefull.insert(orderLine);
-                sessionStatefull.insert(orderLine.getProduct());
-            }
-        }
-        if (request.getTrip() != null) {
-            sessionStatefull.insert(request.getTrip());
-            for (Step step : request.getTrip().getSteps()) {
-                sessionStatefull.insert(step);
-                sessionStatefull.insert(step.getStepStart());
-                sessionStatefull.insert(step.getStepEnd());
-            }
-        }
-    }
-
-    public PredictionInput predictionInputFromOrder(Order order){
-        List<Feature> fs = new ArrayList<>();
-        for (OrderLine o: order.getOrderLines()){
-            List<Feature> compositeFeatures = new ArrayList<>();
-            if (o.getWeight() != null) {
-                compositeFeatures.add(FeatureFactory.newNumericalFeature("bulkWeight", o.getWeight()));
-            } else {
-                compositeFeatures.add(FeatureFactory.newNumericalFeature("number", o.getNumberItems()));
-            }
-            compositeFeatures.add(FeatureFactory.newNumericalFeature("height", o.getProduct().getHeight()));
-            compositeFeatures.add(FeatureFactory.newNumericalFeature("width", o.getProduct().getWidth()));
-            compositeFeatures.add(FeatureFactory.newNumericalFeature("depth", o.getProduct().getDepth()));
-            compositeFeatures.add(FeatureFactory.newNumericalFeature("weight", o.getProduct().getWeight()));
-            compositeFeatures.add(FeatureFactory.newNumericalFeature("transport_type", o.getProduct().getTransportType()));
-            fs.add(FeatureFactory.newCompositeFeature(o.getProduct().getName(), compositeFeatures));
-        }
-        return new PredictionInput(fs);
-    }
-
-    public Order orderFromPredictionInput(PredictionInput pi){
-        Order order = new Order("1");
-        for (Feature f : pi.getFeatures()){
-            HashMap<String, Double> orderDetails = new HashMap<>();
-            List<Feature> compositeFeatures = (List<Feature>) f.getValue().getUnderlyingObject();
-            for (Feature subf : compositeFeatures){
-                try {
-                    orderDetails.put(subf.getName(), (Double) subf.getValue().getUnderlyingObject());
-                } catch(java.lang.ClassCastException e) {
-                    orderDetails.put(subf.getName(), (Integer) subf.getValue().getUnderlyingObject()/1.);
-                }
-            }
-            Product p = new Product(f.getName(), orderDetails.get("height"), orderDetails.get("width"), orderDetails.get("depth"), orderDetails.get("weight"), orderDetails.get("transport_type").intValue());
-            if (orderDetails.containsKey("bulkWeight")){
-                order.getOrderLines().add(new OrderLine(orderDetails.get("bulkWeight"), p));
-            } else {
-                order.getOrderLines().add(new OrderLine(orderDetails.get("number").intValue(), p));
-            }
-        }
-        return order;
-    }
 
 
-    public String matrixPrettyPrint(RealMatrix m){
-        HashMap<Integer, Integer> colSizes = new HashMap<>();
-        for (int i=0; i<m.getRowDimension(); i++) {
-            for (int j = 0; j < m.getColumnDimension(); j++) {
-                int size = String.valueOf(Double.valueOf(m.getEntry(i, j)).intValue()).length();
-                if (!colSizes.containsKey(j)) {
-                    colSizes.put(j, size);
-                } else if (colSizes.get(j) < size) {
-                    colSizes.put(j, size);
-                }
-            }
-        }
-
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i=0; i<m.getRowDimension(); i++){
-            for (int j=0; j<m.getColumnDimension(); j++){
-                String fmt = String.format("%%%d.2f", colSizes.get(j)+3);
-                stringBuilder.append(String.format(fmt, m.getEntry(i,j)));
-                if (j!=m.getColumnDimension()-1){
-                    stringBuilder.append(", ");
-                } else {
-                    stringBuilder.append("\n");
-                }
-            }
-        }
-        return stringBuilder.toString();
-    }
-
-
-    int predictions = 0;
-
-    public PredictionProvider wrapTrip(Trip trip) {
-        return inputs -> supplyAsync(() -> {
-            System.out.printf("Prediction %d (%d pis) %n", predictions, inputs.size());
-            predictions += 1;
-            List<PredictionOutput> predictionOutputs = new ArrayList<>();
-            KieSession session = pool.newKieSession("ksession-rules");
-            for (PredictionInput pi : inputs) {
-                CostCalculationRequest request = new CostCalculationRequest();
-                request.setTrip(trip);
-                request.setOrder(orderFromPredictionInput(pi));
-                this.insertIntoSession(session, request);
-
-                // timeout in case of hanging processes
-                ExecutorService executor = Executors.newCachedThreadPool();
-                Callable<Object> task = () -> session.startProcess("P1");
-                Future<Object> future = executor.submit(task);
-
-                List<Output> outputs = new ArrayList<>();
-                try {
-                    future.get(5, TimeUnit.SECONDS);
-                } catch (TimeoutException e) {
-                    System.out.println("The following PredictionInput timed out:");
-                    System.out.println(pi);
-                    outputs.add(new Output("Total Cost", Type.NUMBER, new Value(0.), 0.));
-                } catch (ExecutionException | InterruptedException e) {
-                    System.out.println("The following PredictionInput errored:");
-                    System.out.println(pi);
-                    outputs.add(new Output("Total Cost", Type.NUMBER, new Value(0.), 0.));
-                    //throw new RuntimeException(e);
-                }
-
-                // if we haven't timed out:
-                int i = session.fireAllRules();
-                double taxCost = 0;
-                double handlingCost = 0;
-                double shippingCost = 0;
-                for (CostElement ce : request.getCostElements()) {
-                    if (ce instanceof TaxesCostElement) {
-                        taxCost += ce.getAmount();
-                    } else if (ce instanceof HandlingCostElement) {
-                        handlingCost += ce.getAmount();
-                    } else {
-                        shippingCost += ce.getAmount();
-                    }
-                }
-//                outputs.add(new Output("Tax Cost", Type.NUMBER, new Value(taxCost), 1.0));
-//                outputs.add(new Output("Handling Cost", Type.NUMBER, new Value(handlingCost), 1.0));
-//                outputs.add(new Output("Shipping Cost", Type.NUMBER, new Value(shippingCost), 1.0));
-                outputs.add(new Output("Total Cost", Type.NUMBER, new Value(taxCost+handlingCost+shippingCost), 1.0));
-                predictionOutputs.add(new PredictionOutput(outputs));
-            }
-//            RealMatrix piMatrix = MatrixUtilsExtensions.matrixFromPredictionInput(
-//                    inputs.stream()
-//                            .map(pi -> new PredictionInput(CompositeFeatureUtils.flattenFeatures(pi.getFeatures())))
-//                            .collect(Collectors.toList()));
-//            RealMatrix poMatrix = MatrixUtilsExtensions.matrixFromPredictionOutput(predictionOutputs);
-//            System.out.println(matrixPrettyPrint(piMatrix));
-//            System.out.println(matrixPrettyPrint(poMatrix));
-            return predictionOutputs;
-        });
-    }
-
-    class RuleContext {
-        Rule rule;
-        int eventHashcode;
-
-        int inputNumber;
-        List<InternalFactHandle> factHandles;
-
-        public RuleContext(Rule rule, int eventHashcode, int inputNumber, List<InternalFactHandle> factHandles) {
-            this.rule = rule;
-            this.eventHashcode = eventHashcode;
-            this.inputNumber = inputNumber;
-            this.factHandles = factHandles;
-        }
-    }
-
+    // class to represent nodes in the rete graph
     class GraphNode {
         String type;
         int id;
@@ -351,7 +183,10 @@ public class TestExercise {
         }
     }
 
-
+    /* function to add/merge nodes as necessary
+     nodes are MERGED when they already exist in the graph for the same rule or contain the same value (in the case of terminal nodes)
+     nodes are ADDED otherwise
+     */
     public GraphNode nodeAdd(Graph<GraphNode, DefaultEdge> graph, HashMap<Integer, GraphNode> nodeMap, GraphNode n){
         boolean inGraph = nodeMap.containsKey(n.hashCode());
         Boolean matchingRuleFlow = null;
@@ -374,7 +209,7 @@ public class TestExercise {
     }
 
 
-
+    // entry point to graph parser. From a terminal node, walk upwards through parent recursively
     public void parseTerminalNode(AbstractTerminalNode terminalNode, RuleTracker ruleTracker, RuleContext ruleContext, DroolsParserContext dpc){
         RuleTerminalNode node = (RuleTerminalNode) terminalNode;
         dpc.currentTerminals = new ArrayList<>();
@@ -401,6 +236,7 @@ public class TestExercise {
         }
     }
 
+    // from an object source, walk upwards through parent recursively
     public void parseObjectSource(ObjectSource objectSource, GraphNode child, RuleContext ruleContext, DroolsParserContext dpc){
         GraphNode subGraphNode = null;
         GraphNode addedNode = null;
@@ -434,6 +270,7 @@ public class TestExercise {
         dpc.graph.addEdge(addedNode, child);
     }
 
+    // from an object source, walk upwards through parent(s) recursively
     public void parseLeftTupleSource(LeftTupleSource leftTupleSinkNode, GraphNode child, RuleContext ruleContext, DroolsParserContext dpc) {
         GraphNode subGraphNode = null;
         BetaNode betaNode = null;
@@ -474,7 +311,7 @@ public class TestExercise {
         dpc.graph.addEdge(addedNode, child);
     }
 
-    
+    // extract all gettable fields from object recursively into dictionary of field_name:object
     public static HashMap<String, Object> beanProperties(final Object bean, RuleTracker ruleTracker, String prefix, boolean verbose) {
         final HashMap<String, Object> result = new HashMap<>();
         String name = prefix.equals("") ? bean.getClass().getName() : prefix;
@@ -576,8 +413,101 @@ public class TestExercise {
         return result;
     }
 
+    public static void beanPropertiesSetter(final Object bean, HashMap<String, Object> objectHashMap, String prefix, boolean verbose) {
+        String name = prefix.equals("") ? bean.getClass().getName() : prefix;
 
-    public <K,S, V> void listHashAdd(HashMap<K, HashMap<S, Pair<V,V>>> map, K key, S subkey, Pair<V,V> value) {
+        // otherwise investigate its contents
+        if (verbose){ System.out.println("Exploring "+ name);}
+        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[0];
+        try {
+            propertyDescriptors = Introspector.getBeanInfo(bean.getClass(), Object.class).getPropertyDescriptors();
+        } catch (Exception ex) {
+            // ignore, no property descriptors
+        }
+        for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
+            final Method writeMethod = propertyDescriptor.getWriteMethod();
+            // if there's getters:
+            if (writeMethod != null) {
+                try {
+                    read = readMethod.invoke(bean, (Object[]) null);
+                } catch (Exception ex) {
+                    //ignore, non-readable read method
+                }
+                if (read == null){ return result; }
+
+                String thisName = name + "." + propertyDescriptor.getName();
+                boolean inContainers = true;
+                if (ruleTracker != null) {
+                    if (ruleTracker.includedOutputContainers.size() > 0) {
+                        inContainers = ruleTracker.includedOutputContainers.stream().anyMatch(propertyDescriptor.getName()::contains);
+                    }
+                    if (ruleTracker.excludedOutputContainers.size() > 0) {
+                        inContainers &= ruleTracker.excludedOutputContainers.stream().noneMatch(propertyDescriptor.getName()::contains);
+                    }
+                }
+
+                if (verbose) {
+                    System.out.printf("\t %s=%s, primitive? %b, %s in Containers? %b",
+                            thisName, read.toString(),
+                            (read instanceof Number || read instanceof String || read instanceof Boolean),
+                            propertyDescriptor.getName(), inContainers);
+                }
+
+                if (ruleTracker != null) {
+                    if (inContainers) {
+                        ruleTracker.actualIncludedContainers.add(thisName);
+                    } else {
+                        ruleTracker.actualExcludedContainers.add(thisName);
+                    }
+                }
+
+                // if the get'ted object is a 'base' type:
+                if ((read instanceof Number || read instanceof String || read instanceof Boolean) && inContainers) {
+                    result.put(thisName, read);
+                    if (verbose) {
+                        System.out.println("...adding to result");
+                    }
+                } else if (read instanceof Iterable && inContainers) { //is is an iterable object?
+                    int i = 0;
+                    if (verbose) {
+                        System.out.printf("%n=== recursing %s ======================%n", name);
+                    }
+                    for (Object o : (Iterable<?>) read) {
+                        beanProperties(
+                                o,
+                                ruleTracker,
+                                thisName + "[" + i + "]",
+                                verbose)
+                                .forEach(result::putIfAbsent);
+                        i++;
+                    }
+                    if (verbose) {
+                        System.out.println("=== end recursion ==================================\n");
+                    }
+                } else if (inContainers) { // if the object is not base or iterable, but is a specified container:
+                    if (verbose) {
+                        System.out.println("...unpacking ======================");
+                    }
+                    beanProperties(
+                            read,
+                            ruleTracker,
+                            thisName,
+                            verbose)
+                            .forEach(result::putIfAbsent);
+                    if (verbose) {
+                        System.out.println("=== end unpack ==================================");
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+
+    // given a hashmap of hashmaps of pairs, add a Pair to the key $key, subkey $subkey
+    // creates the hashmap at $key if necessary
+    public <K,S, V> void addToHashOfHashOfPair(HashMap<K, HashMap<S, Pair<V,V>>> map, K key, S subkey, Pair<V,V> value) {
         HashMap<S, Pair<V,V>> hash = map.containsKey(key) ? map.get(key) : new HashMap<>();
         if (hash.containsKey(subkey)){
             Pair<V, V> transitiveObject = new Pair<>(hash.get(subkey).getFirst(), value.getSecond());
@@ -589,6 +519,24 @@ public class TestExercise {
     }
 
 
+    //class to track the event + objects associate with a particular Rule
+    class RuleContext {
+        Rule rule;
+        int eventHashcode;
+
+        int inputNumber;
+        List<InternalFactHandle> factHandles;
+
+        public RuleContext(Rule rule, int eventHashcode, int inputNumber, List<InternalFactHandle> factHandles) {
+            this.rule = rule;
+            this.eventHashcode = eventHashcode;
+            this.inputNumber = inputNumber;
+            this.factHandles = factHandles;
+        }
+    }
+
+
+    // AgendaEvent listener, that tracks the objects that change before and after a rule is fired
     class RuleTracker extends DefaultAgendaEventListener {
         HashMap<String, HashMap<String, Object>> beforeHashes = new HashMap<>();
         HashMap<String, HashMap<String, Object>> afterHashes = new HashMap<>();
@@ -609,24 +557,29 @@ public class TestExercise {
         int inputNumber;
         Pair<Rule, String> outputTarget = null;
         Output desiredOutput = null;
+        boolean parseGraph;
 
-        public RuleTracker(Set<String> includedRules, Set<String> excludedRules, Set<String> includedOutputContainers, Set<String> excludedOutputContainers,  DroolsParserContext droolsParserContext) {
+        public RuleTracker(Set<String> includedRules, Set<String> excludedRules, Set<String> includedOutputContainers,
+                           Set<String> excludedOutputContainers,  DroolsParserContext droolsParserContext, boolean parseGraph) {
             this.includedRules = includedRules;
             this.excludedRules = excludedRules;
             this.includedOutputContainers = includedOutputContainers;
             this.excludedOutputContainers = excludedOutputContainers;
             this.droolsParserContext = droolsParserContext;
+            this.parseGraph = parseGraph;
         }
 
-
+        // which # input to the model is this from?
         public void setInputNumber(int inputNumber) {
             this.inputNumber = inputNumber;
         }
 
+        // how do access the object that is our desired output?
         public void setOutputTarget(Pair<Rule, String> outputTarget){
             this.outputTarget = outputTarget;
         }
 
+        // set desired output as a TrustyAI Object
         public void setDesiredOutput(Object o){
             String name = outputTarget.getFirst().getName() + ": " + outputTarget.getSecond();
             if (o instanceof Number){
@@ -638,6 +591,7 @@ public class TestExercise {
             }
         }
 
+        // does this particular Rule satisfy the inclusion/exclusion requirements
         public boolean ruleInclusionCheck(String ruleName){
             boolean includeThisRule = true;
             if (includedRules.size() > 0){
@@ -649,6 +603,7 @@ public class TestExercise {
             return includeThisRule;
         }
 
+        // before a rule fires, catalog every object associated with the rule
         @Override
         public void beforeMatchFired(BeforeMatchFiredEvent event) {
             super.beforeMatchFired(event);
@@ -661,6 +616,8 @@ public class TestExercise {
             }
         }
 
+        // after the rule fires, catalog every object associated with the rule
+        // then, see what has changed
         @Override
         public void afterMatchFired(AfterMatchFiredEvent event) {
             super.afterMatchFired(event);
@@ -676,11 +633,11 @@ public class TestExercise {
                 for (String key : new ArrayList<>(keySets)) {
                     if (!beforeHashes.containsKey(key)) {
                         Pair<Object, Object> differenceObject = new Pair<>(null, afterHashes.get(key));
-                        listHashAdd(this.differences, event.getMatch().getRule(), key, differenceObject);
+                        addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), key, differenceObject);
                     }
                     if (!afterHashes.containsKey(key)) {
                         Pair<Object, Object> differenceObject = new Pair<>(beforeHashes.get(key), null);
-                        listHashAdd(this.differences, event.getMatch().getRule(), key, differenceObject);
+                        addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), key, differenceObject);
                     }
                     if (beforeHashes.containsKey(key) && afterHashes.containsKey(key)) {
                         HashMap<String, Object> afterValues = afterHashes.get(key);
@@ -692,16 +649,16 @@ public class TestExercise {
                         for (String objectKey : objectKeySets) {
                             if (!beforeValues.containsKey(objectKey)) {
                                 Pair<Object, Object> differenceObject = new Pair<>(null, afterValues.get(objectKey));
-                                listHashAdd(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
+                                addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
                             }
                             if (!afterValues.containsKey(objectKey)) {
                                 Pair<Object, Object> differenceObject = new Pair<>(beforeValues.get(objectKey), null);
-                                listHashAdd(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
+                                addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
                             }
                             if (beforeValues.containsKey(objectKey) && afterValues.containsKey(objectKey)) {
                                 if (!beforeValues.get(objectKey).equals(afterValues.get(objectKey))) {
                                     Pair<Object, Object> differenceObject = new Pair<>(beforeValues.get(objectKey), afterValues.get(objectKey));
-                                    listHashAdd(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
+                                    addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
                                 }
                             }
                             beforeHashes.remove(key);
@@ -709,19 +666,24 @@ public class TestExercise {
                         }
                     }
                 }
+
+                // if we've set an output target, capture it here
                 if (outputTarget !=  null && event.getMatch().getRule() == outputTarget.getFirst() && differences.get(outputTarget.getFirst()).containsKey(outputTarget.getSecond())){
                     this.setDesiredOutput(differences.get(outputTarget.getFirst()).get(outputTarget.getSecond()).getSecond());
                 }
 
-                RuleContext ruleContext = new RuleContext(event.getMatch().getRule(),
-                        event.hashCode(),
-                        inputNumber,
-                        eventFactHandles);
-                parseTerminalNode((AbstractTerminalNode) ((RuleTerminalNodeLeftTuple) event.getMatch()).getTupleSink(), this, ruleContext, droolsParserContext);
+                if (parseGraph) {
+                    RuleContext ruleContext = new RuleContext(event.getMatch().getRule(),
+                            event.hashCode(),
+                            inputNumber,
+                            eventFactHandles);
+                    parseTerminalNode((AbstractTerminalNode) ((RuleTerminalNodeLeftTuple) event.getMatch()).getTupleSink(), this, ruleContext, droolsParserContext);
+                }
             }
         }
     }
 
+    // track various objects about the drools engine being parsed, namely the rete graph
     public class DroolsParserContext{
         InternalWorkingMemory internalWorkingMemory;
         Map<String, Value> features;
@@ -764,7 +726,7 @@ public class TestExercise {
         Set<String> excludedFeatureClasses = Stream.of("Pallet").collect(Collectors.toSet());
 
         DroolsParserContext dpc = new DroolsParserContext(internalWorkingMemory, features, graph, excludedFeatureClasses);
-        RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc);
+        RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, true);
         ruleTracker.setInputNumber(0);
         session.addEventListener(ruleTracker);
         KieBase kbase = session.getKieBase();
@@ -774,7 +736,7 @@ public class TestExercise {
         CostCalculationRequest request = new CostCalculationRequest();
         request.setTrip(trip);
         request.setOrder(order);
-        this.insertIntoSession(session, request);
+        recursiveInsert(session, List.of(request));
         session.startProcess("P1");
         session.fireAllRules();
         session.dispose();
@@ -784,7 +746,7 @@ public class TestExercise {
 
 
         dpc = new DroolsParserContext(internalWorkingMemory, features, dpc.graph, dpc.graphNodeMap, excludedFeatureClasses);
-        ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc);
+        ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, true);
         ruleTracker.setInputNumber(1);
         session.addEventListener(ruleTracker);
 
@@ -792,12 +754,23 @@ public class TestExercise {
         request = new CostCalculationRequest();
         request.setTrip(trip);
         request.setOrder(order);
-        this.insertIntoSession(session, request);
+        recursiveInsert(session, List.of(request));
         session.startProcess("P1");
         session.fireAllRules();
 
         printGraph(graph);
     }
+
+    public void recursiveInsert(KieSession kieSession, List<Object> objectsToInsert){
+        for (Object o : objectsToInsert){
+            HashMap<String, Object> objectHashMap = beanProperties(o, null, "", false);
+            for (Map.Entry<String, Object> entry : objectHashMap.entrySet()){
+                kieSession.insert(entry.getValue());
+            }
+        }
+
+    }
+
 
     public RuleTracker runSession(Trip trip, Order order){
         KieSession session = kieContainer.newKieSession("ksession-rules");
@@ -812,7 +785,7 @@ public class TestExercise {
         Set<String> excludedFeatureClasses = Stream.of("Pallet").collect(Collectors.toSet());
 
         DroolsParserContext dpc = new DroolsParserContext(internalWorkingMemory, features, graph, excludedFeatureClasses);
-        RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc);
+        RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
         ruleTracker.setInputNumber(0);
         session.addEventListener(ruleTracker);
         KieBase kbase = session.getKieBase();
@@ -820,7 +793,7 @@ public class TestExercise {
         CostCalculationRequest request = new CostCalculationRequest();
         request.setTrip(trip);
         request.setOrder(order);
-        this.insertIntoSession(session, request);
+        recursiveInsert(session, List.of(request));
         session.startProcess("P1");
         session.fireAllRules();
         session.dispose();
@@ -840,7 +813,7 @@ public class TestExercise {
         Set<String> excludedFeatureClasses = Stream.of("Pallet").collect(Collectors.toSet());
 
         DroolsParserContext dpc = new DroolsParserContext(internalWorkingMemory, features, graph, excludedFeatureClasses);
-        RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc);
+        RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
         ruleTracker.setInputNumber(0);
         ruleTracker.setOutputTarget(outputTarget);
         session.addEventListener(ruleTracker);
@@ -849,7 +822,7 @@ public class TestExercise {
         CostCalculationRequest request = new CostCalculationRequest();
         request.setTrip(trip);
         request.setOrder(order);
-        this.insertIntoSession(session, request);
+        recursiveInsert(session, List.of(request));
         session.startProcess("P1");
         session.fireAllRules();
         session.dispose();
