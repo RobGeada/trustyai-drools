@@ -1,8 +1,8 @@
 import cost.*;
-import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.beanutils.ConvertingWrapDynaBean;
+import org.apache.commons.beanutils.DynaClass;
+import org.apache.commons.beanutils.DynaProperty;
 import org.apache.commons.math3.util.Pair;
-import org.drools.core.base.ClassFieldReader;
-import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.common.InternalFactHandle;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.event.DefaultAgendaEventListener;
@@ -21,6 +21,7 @@ import org.drools.core.reteoo.RightInputAdapterNode;
 import org.drools.core.reteoo.RuleTerminalNode;
 import org.drools.core.reteoo.RuleTerminalNodeLeftTuple;
 import org.drools.core.spi.BetaNodeFieldConstraint;
+import org.drools.core.util.StringUtils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -35,18 +36,14 @@ import org.kie.api.KieServices;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.BeforeMatchFiredEvent;
 import org.kie.api.runtime.KieContainer;
-import org.kie.api.runtime.KieContainerSessionsPool;
 import org.kie.api.runtime.KieSession;
-import org.kie.api.runtime.rule.FactHandle;
 import org.kie.kogito.explainability.model.Feature;
-import org.kie.kogito.explainability.model.FeatureFactory;
 import org.kie.kogito.explainability.model.Output;
 import org.kie.kogito.explainability.model.PredictionInput;
 import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
 import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
-import org.kie.kogito.explainability.utils.CompositeFeatureUtils;
 
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -55,28 +52,22 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -311,8 +302,11 @@ public class TestExercise {
         dpc.graph.addEdge(addedNode, child);
     }
 
-    // extract all gettable fields from object recursively into dictionary of field_name:object
-    public static HashMap<String, Object> beanProperties(final Object bean, RuleTracker ruleTracker, String prefix, boolean verbose) {
+    public HashMap<String, Object> beanProperties(final Object bean, RuleTracker ruleTracker) {
+        return beanProperties(bean, ruleTracker, "", false);
+    }
+
+    public HashMap<String, Object> beanProperties(final Object bean, RuleTracker ruleTracker, String prefix, boolean verbose) {
         final HashMap<String, Object> result = new HashMap<>();
         String name = prefix.equals("") ? bean.getClass().getName() : prefix;
 
@@ -340,9 +334,10 @@ public class TestExercise {
                 try {
                     read = readMethod.invoke(bean, (Object[]) null);
                 } catch (Exception ex) {
+                    ex.printStackTrace();
                     //ignore, non-readable read method
                 }
-                if (read == null){ return result; }
+                if (read == null){ continue; }
 
                 String thisName = name + "." + propertyDescriptor.getName();
                 boolean inContainers = true;
@@ -413,90 +408,109 @@ public class TestExercise {
         return result;
     }
 
-    public static void beanPropertiesSetter(final Object bean, HashMap<String, Object> objectHashMap, String prefix, boolean verbose) {
+
+    public class WriterContainer{
+        Method method;
+        ConvertingWrapDynaBean convertingWrapDynaBean;
+        String fieldName;
+        Object argument;
+
+        public WriterContainer(Method method, ConvertingWrapDynaBean convertingWrapDynaBean, String fieldName, Object argument){
+            this.method = method;
+            this.convertingWrapDynaBean = convertingWrapDynaBean;
+            this.fieldName = fieldName;
+            this.argument = argument;
+        }
+
+        @Override
+        public String toString() {
+            return String.format(method.toString());
+        }
+
+        public Object invoke(String newValue) throws InvocationTargetException, IllegalAccessException {
+            return this.method.invoke(this.convertingWrapDynaBean, this.fieldName, newValue);
+        }
+    }
+
+    public HashMap<String, WriterContainer> beanWriteProperties(final Object bean, boolean verbose) {
+        return beanWriteProperties(bean, "", verbose);
+    }
+
+    public HashMap<String, WriterContainer> beanWriteProperties(final Object bean, String prefix, boolean verbose) {
+        return beanWriteProperties(bean, prefix, verbose, "");
+    }
+
+    // extract all gettable fields from object recursively into dictionary of field_name:object
+    public HashMap<String, WriterContainer> beanWriteProperties(final Object bean, String prefix, boolean verbose, String verbosePrefix) {
+        final HashMap<String, WriterContainer> result = new HashMap<>();
         String name = prefix.equals("") ? bean.getClass().getName() : prefix;
 
-        // otherwise investigate its contents
-        if (verbose){ System.out.println("Exploring "+ name);}
-        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[0];
-        try {
-            propertyDescriptors = Introspector.getBeanInfo(bean.getClass(), Object.class).getPropertyDescriptors();
-        } catch (Exception ex) {
-            // ignore, no property descriptors
+        // check if object itself is a "base" type
+        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean){
+            if (verbose) {System.out.printf("\t %s=%s, primitive? %b", name, bean, true);}
+            return result;
         }
-        for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
-            final Method writeMethod = propertyDescriptor.getWriteMethod();
-            // if there's getters:
-            if (writeMethod != null) {
-                try {
-                    read = readMethod.invoke(bean, (Object[]) null);
-                } catch (Exception ex) {
-                    //ignore, non-readable read method
-                }
-                if (read == null){ return result; }
 
-                String thisName = name + "." + propertyDescriptor.getName();
-                boolean inContainers = true;
-                if (ruleTracker != null) {
-                    if (ruleTracker.includedOutputContainers.size() > 0) {
-                        inContainers = ruleTracker.includedOutputContainers.stream().anyMatch(propertyDescriptor.getName()::contains);
-                    }
-                    if (ruleTracker.excludedOutputContainers.size() > 0) {
-                        inContainers &= ruleTracker.excludedOutputContainers.stream().noneMatch(propertyDescriptor.getName()::contains);
-                    }
-                }
-
+        // otherwise investigate its contents
+        if (verbose){ System.out.printf("%sExploring %s:%n", verbosePrefix, name);}
+        ConvertingWrapDynaBean convertingWrapDynaBean = new ConvertingWrapDynaBean(bean);
+        DynaClass dynaClass = convertingWrapDynaBean.getDynaClass();
+        for (DynaProperty dynaProperty : dynaClass.getDynaProperties()){
+            Method writeMethod = null;
+            Object read = null;
+            try {
+                writeMethod = convertingWrapDynaBean.getClass().getMethod("set", String.class, Object.class);
+                read = convertingWrapDynaBean.get(dynaProperty.getName());
+                writeMethod.invoke(convertingWrapDynaBean, dynaProperty.getName(), read);
+            } catch (Exception ex) {
+                //ignore non-readable read method or non-writeable write
+                if (verbose) {ex.printStackTrace();}
+            }
+            if (read == null || writeMethod ==null) {
+                continue;
+            }
+            String thisName = name + "." + dynaProperty.getName();
+            if (verbose) {
+                System.out.printf("%s\t %s=%s, primitive? %b",
+                        verbosePrefix,
+                        thisName, read.toString(),
+                        (read instanceof Number || read instanceof String || read instanceof Boolean),
+                        dynaProperty.getName());
+            }
+            // if the get'ted object is a 'base' type:
+            if ((read instanceof Number || read instanceof String || read instanceof Boolean)) {
+                result.put(thisName, new WriterContainer(writeMethod, convertingWrapDynaBean, dynaProperty.getName(), read));
                 if (verbose) {
-                    System.out.printf("\t %s=%s, primitive? %b, %s in Containers? %b",
-                            thisName, read.toString(),
-                            (read instanceof Number || read instanceof String || read instanceof Boolean),
-                            propertyDescriptor.getName(), inContainers);
+                    System.out.println("...adding to result");
                 }
-
-                if (ruleTracker != null) {
-                    if (inContainers) {
-                        ruleTracker.actualIncludedContainers.add(thisName);
-                    } else {
-                        ruleTracker.actualExcludedContainers.add(thisName);
-                    }
+            } else if (read instanceof Iterable) { //is is an iterable object?
+                int i = 0;
+                if (verbose) {
+                    System.out.printf("%n%s\t=== recursing %s ======================%n", verbosePrefix, thisName);
                 }
-
-                // if the get'ted object is a 'base' type:
-                if ((read instanceof Number || read instanceof String || read instanceof Boolean) && inContainers) {
-                    result.put(thisName, read);
-                    if (verbose) {
-                        System.out.println("...adding to result");
-                    }
-                } else if (read instanceof Iterable && inContainers) { //is is an iterable object?
-                    int i = 0;
-                    if (verbose) {
-                        System.out.printf("%n=== recursing %s ======================%n", name);
-                    }
-                    for (Object o : (Iterable<?>) read) {
-                        beanProperties(
-                                o,
-                                ruleTracker,
-                                thisName + "[" + i + "]",
-                                verbose)
-                                .forEach(result::putIfAbsent);
-                        i++;
-                    }
-                    if (verbose) {
-                        System.out.println("=== end recursion ==================================\n");
-                    }
-                } else if (inContainers) { // if the object is not base or iterable, but is a specified container:
-                    if (verbose) {
-                        System.out.println("...unpacking ======================");
-                    }
-                    beanProperties(
-                            read,
-                            ruleTracker,
-                            thisName,
-                            verbose)
+                for (Object o : (Iterable<?>) read) {
+                    beanWriteProperties(
+                            o,
+                            thisName + "[" + i + "]",
+                            verbose, verbosePrefix + "\t")
                             .forEach(result::putIfAbsent);
-                    if (verbose) {
-                        System.out.println("=== end unpack ==================================");
-                    }
+                    i++;
+                }
+                if (verbose) {
+                    System.out.printf("%s\t=== end recursion ==================================%n", verbosePrefix);
+                }
+            } else { // if the object is not base or iterable, but is a specified container:
+                if (verbose) {
+                    System.out.printf("%n%s\t=== unpacking %s ==================================%n", verbosePrefix, thisName);
+                }
+                beanWriteProperties(
+                        read,
+                        thisName,
+                        verbose,
+                        verbosePrefix + "\t")
+                        .forEach(result::putIfAbsent);
+                if (verbose) {
+                    System.out.printf("%s\t=== end unpack ==================================%n", verbosePrefix);
                 }
             }
         }
@@ -504,6 +518,79 @@ public class TestExercise {
         return result;
     }
 
+    public List<Object> beanContainers(final Object bean, String prefix, boolean verbose, String verbosePrefix) {
+        final List<Object> result = new ArrayList<>(List.of(bean));
+        String name = prefix.equals("") ? bean.getClass().getName() : prefix;
+
+        // check if object itself is a "base" type
+        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean){
+            if (verbose) {System.out.printf("\t %s=%s, primitive? %b", name, bean, true);}
+            return result;
+        }
+
+        // otherwise investigate its contents
+        if (verbose){ System.out.printf("%sExploring %s:%n", verbosePrefix, name);}
+        ConvertingWrapDynaBean convertingWrapDynaBean = new ConvertingWrapDynaBean(bean);
+        DynaClass dynaClass = convertingWrapDynaBean.getDynaClass();
+        for (DynaProperty dynaProperty : dynaClass.getDynaProperties()){
+            Object read = null;
+            try {
+                read = convertingWrapDynaBean.get(dynaProperty.getName());
+            } catch (Exception ex) {
+                //ignore non-readable read method or non-writeable write
+                if (verbose) {ex.printStackTrace();}
+            }
+            if (read == null) {
+                continue;
+            }
+            String thisName = name + "." + dynaProperty.getName();
+            if (verbose) {
+                System.out.printf("%s\t %s=%s, primitive? %b",
+                        verbosePrefix,
+                        thisName, read.toString(),
+                        (read instanceof Number || read instanceof String || read instanceof Boolean),
+                        dynaProperty.getName());
+            }
+            // if the get'ted object is a 'base' type:
+            if ((read instanceof Number || read instanceof String || read instanceof Boolean)) {
+                result.add(read);
+                if (verbose) {
+                    System.out.println("...adding to result");
+                }
+            } else if (read instanceof Iterable) { //is is an iterable object?
+                int i = 0;
+                if (verbose) {
+                    System.out.printf("%n%s\t=== recursing %s ======================%n", verbosePrefix, thisName);
+                }
+                for (Object o : (Iterable<?>) read) {
+                    result.add(bean);
+                    result.add(o);
+                    result.addAll(beanContainers(
+                            o,
+                            thisName + "[" + i + "]",
+                            verbose, verbosePrefix + "\t"));
+                    i++;
+                }
+                if (verbose) {
+                    System.out.printf("%s\t=== end recursion ==================================%n", verbosePrefix);
+                }
+            } else { // if the object is not base or iterable, but is a specified container:
+                if (verbose) {
+                    System.out.printf("%n%s\t=== unpacking %s ==================================%n", verbosePrefix, thisName);
+                }
+                result.addAll(beanContainers(
+                        read,
+                        thisName,
+                        verbose,
+                        verbosePrefix + "\t"));
+                if (verbose) {
+                    System.out.printf("%s\t=== end unpack ==================================%n", verbosePrefix);
+                }
+            }
+        }
+
+        return result;
+    }
 
     // given a hashmap of hashmaps of pairs, add a Pair to the key $key, subkey $subkey
     // creates the hashmap at $key if necessary
@@ -554,9 +641,10 @@ public class TestExercise {
         List<InternalFactHandle> eventFactHandles;
         DroolsParserContext droolsParserContext;
 
-        int inputNumber;
-        Pair<Rule, String> outputTarget = null;
-        Output desiredOutput = null;
+        int inputNumber = 0;
+        List<Pair<Rule, String>> outputTargets;
+        HashMap<Pair<Rule, String>, Output> desiredOutputs = new HashMap<>();
+
         boolean parseGraph;
 
         public RuleTracker(Set<String> includedRules, Set<String> excludedRules, Set<String> includedOutputContainers,
@@ -575,19 +663,19 @@ public class TestExercise {
         }
 
         // how do access the object that is our desired output?
-        public void setOutputTarget(Pair<Rule, String> outputTarget){
-            this.outputTarget = outputTarget;
+        public void setOutputTargets(List<Pair<Rule, String>> outputTargets){
+            this.outputTargets = outputTargets;
         }
 
         // set desired output as a TrustyAI Object
-        public void setDesiredOutput(Object o){
+        public void addDesiredOutput(Pair<Rule, String> outputTarget, Object o) {
             String name = outputTarget.getFirst().getName() + ": " + outputTarget.getSecond();
-            if (o instanceof Number){
-                this.desiredOutput = new Output(name, Type.NUMBER, new Value(((Number) o).doubleValue()), 1.0);
-            } else if (o instanceof Boolean){
-                this.desiredOutput = new Output(name, Type.BOOLEAN, new Value(o), 1.0);
-            } else if (o instanceof String){
-                this.desiredOutput = new Output(name, Type.CATEGORICAL, new Value(o), 1.0);
+            if (o instanceof Number) {
+                desiredOutputs.put(outputTarget, new Output(name, Type.NUMBER, new Value(((Number) o).doubleValue()), 1.0));
+            } else if (o instanceof Boolean) {
+                desiredOutputs.put(outputTarget, new Output(name, Type.BOOLEAN, new Value(o), 1.0));
+            } else if (o instanceof String) {
+                desiredOutputs.put(outputTarget, new Output(name, Type.CATEGORICAL, new Value(o), 1.0));
             }
         }
 
@@ -611,7 +699,7 @@ public class TestExercise {
             this.eventFactHandles = eventFactHandles;
             if (ruleInclusionCheck(event.getMatch().getRule().getName())) {
                 for (InternalFactHandle fh : eventFactHandles) {
-                    beforeHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this, "", false));
+                    beforeHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this));
                 }
             }
         }
@@ -624,7 +712,7 @@ public class TestExercise {
             if (ruleInclusionCheck(event.getMatch().getRule().getName())) {
                 List<InternalFactHandle> eventFactHandles = (List<InternalFactHandle>) event.getMatch().getFactHandles();
                 for (InternalFactHandle fh : eventFactHandles) {
-                    afterHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this, "", false));
+                    afterHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this));
                 }
 
                 Set<String> keySets = new HashSet<>(afterHashes.keySet());
@@ -668,8 +756,13 @@ public class TestExercise {
                 }
 
                 // if we've set an output target, capture it here
-                if (outputTarget !=  null && event.getMatch().getRule() == outputTarget.getFirst() && differences.get(outputTarget.getFirst()).containsKey(outputTarget.getSecond())){
-                    this.setDesiredOutput(differences.get(outputTarget.getFirst()).get(outputTarget.getSecond()).getSecond());
+
+                if (outputTargets !=  null){
+                    for (Pair<Rule, String> outputTarget : outputTargets) {
+                        if (event.getMatch().getRule() == outputTarget.getFirst() && differences.get(outputTarget.getFirst()).containsKey(outputTarget.getSecond())) {
+                            this.addDesiredOutput(outputTarget, differences.get(outputTarget.getFirst()).get(outputTarget.getSecond()).getSecond());
+                        }
+                    }
                 }
 
                 if (parseGraph) {
@@ -686,7 +779,7 @@ public class TestExercise {
     // track various objects about the drools engine being parsed, namely the rete graph
     public class DroolsParserContext{
         InternalWorkingMemory internalWorkingMemory;
-        Map<String, Value> features;
+        Map<String, Value> features = new HashMap<>();
         Graph<GraphNode, DefaultEdge> graph;
         HashMap<Integer, GraphNode> graphNodeMap;
         List<GraphNode> previousTerminals = new ArrayList<>();
@@ -763,119 +856,209 @@ public class TestExercise {
 
     public void recursiveInsert(KieSession kieSession, List<Object> objectsToInsert){
         for (Object o : objectsToInsert){
-            HashMap<String, Object> objectHashMap = beanProperties(o, null, "", false);
-            for (Map.Entry<String, Object> entry : objectHashMap.entrySet()){
-                kieSession.insert(entry.getValue());
+            List<Object> subObjects = beanContainers(o, "", false, "");
+            for (Object subObj : subObjects){
+                kieSession.insert(subObj);
             }
         }
 
     }
 
+    public class DroolsWrapper {
+        List<String> featureWriterFilters;
+        Supplier<List<Object>> inputGenerator;
 
-    public RuleTracker runSession(Trip trip, Order order){
-        KieSession session = kieContainer.newKieSession("ksession-rules");
-        InternalWorkingMemory internalWorkingMemory = (InternalWorkingMemory) session;
-        Map<String, Value> features = new HashMap<>();
-        Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        String sessionContainer;
+        KieSession session;
+        InternalWorkingMemory internalWorkingMemory;
+        List<Pair<Rule, String>> outputAccessors;
 
-        Set<String> excludedOutputRules = new HashSet<>();//Stream.of("Create Pallet").collect(Collectors.toSet());
-        Set<String> includedOutputRules = new HashSet<>(); //Stream.of("CalculateTotal", "Cost").collect(Collectors.toSet());
-        Set<String> excludedOutputFields = Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step").collect(Collectors.toSet());
-        Set<String> includedOutputFields = new HashSet<>();//Stream.of().collect(Collectors.toSet());
-        Set<String> excludedFeatureClasses = Stream.of("Pallet").collect(Collectors.toSet());
+        List<Integer>outputIndeces;
 
-        DroolsParserContext dpc = new DroolsParserContext(internalWorkingMemory, features, graph, excludedFeatureClasses);
-        RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
-        ruleTracker.setInputNumber(0);
-        session.addEventListener(ruleTracker);
-        KieBase kbase = session.getKieBase();
+        String sessionRules;
 
-        CostCalculationRequest request = new CostCalculationRequest();
-        request.setTrip(trip);
-        request.setOrder(order);
-        recursiveInsert(session, List.of(request));
-        session.startProcess("P1");
-        session.fireAllRules();
-        session.dispose();
-        return ruleTracker;
-    }
+        public void setIncludedOutputRules(Set<String> includedOutputRules) {
+            this.includedOutputRules = includedOutputRules;
+        }
 
-    public RuleTracker runSession(Trip trip, Order order, Pair<Rule, String> outputTarget){
-        KieSession session = kieContainer.newKieSession("ksession-rules");
-        InternalWorkingMemory internalWorkingMemory = (InternalWorkingMemory) session;
-        Map<String, Value> features = new HashMap<>();
-        Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        public void setExcludedOutputRules(Set<String> excludedOutputRules) {
+            this.excludedOutputRules = excludedOutputRules;
+        }
 
-        Set<String> excludedOutputRules = new HashSet<>();//Stream.of("Create Pallet").collect(Collectors.toSet());
-        Set<String> includedOutputRules = new HashSet<>(); //Stream.of("CalculateTotal", "Cost").collect(Collectors.toSet());
-        Set<String> excludedOutputFields = Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step").collect(Collectors.toSet());
-        Set<String> includedOutputFields = new HashSet<>();//Stream.of().collect(Collectors.toSet());
-        Set<String> excludedFeatureClasses = Stream.of("Pallet").collect(Collectors.toSet());
+        public void setIncludedOutputFields(Set<String> includedOutputFields) {
+            this.includedOutputFields = includedOutputFields;
+        }
 
-        DroolsParserContext dpc = new DroolsParserContext(internalWorkingMemory, features, graph, excludedFeatureClasses);
-        RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
-        ruleTracker.setInputNumber(0);
-        ruleTracker.setOutputTarget(outputTarget);
-        session.addEventListener(ruleTracker);
-        KieBase kbase = session.getKieBase();
+        public void setExcludedOutputFields(Set<String> excludedOutputFields) {
+            this.excludedOutputFields = excludedOutputFields;
+        }
 
-        CostCalculationRequest request = new CostCalculationRequest();
-        request.setTrip(trip);
-        request.setOrder(order);
-        recursiveInsert(session, List.of(request));
-        session.startProcess("P1");
-        session.fireAllRules();
-        session.dispose();
-        return ruleTracker;
+        Set<String> includedOutputRules = new HashSet<>();
+        Set<String> excludedOutputRules= new HashSet<>();
+        Set<String> includedOutputFields= new HashSet<>();
+        Set<String> excludedOutputFields= new HashSet<>();
+
+        public DroolsWrapper(String sessionRules, Supplier<List<Object>> inputGenerator) {
+            this.inputGenerator = inputGenerator;
+            this.sessionRules = sessionRules;
+        }
+
+        public void setFeatureExtractorFilters(List<String> filters) {
+            this.featureWriterFilters = filters;
+        }
+
+        public HashMap<Feature, WriterContainer> featureExtractor() {
+            List<Object> inputs = this.inputGenerator.get();
+            HashMap<Feature, WriterContainer> fs = new HashMap<>();
+            for (Object input  : inputs) {
+                String rawName = input.getClass().getName() + "_" + input.hashCode();
+                HashMap<String, WriterContainer> writers = beanWriteProperties(input, false);
+                for (Map.Entry<String, WriterContainer> entry : writers.entrySet()){
+                    String featureName = rawName+"_"+entry.getKey();
+                    if (featureWriterFilters != null && this.featureWriterFilters.stream().noneMatch(featureName::contains)){
+                        continue;
+                    }
+                    Object subObject = entry.getValue().argument;
+                    Feature f;
+                    if (subObject instanceof Number){
+                        f = new Feature(featureName, Type.NUMBER, new Value(subObject));
+                    } else if (subObject instanceof Boolean){
+                        f = new Feature(featureName, Type.BOOLEAN, new Value(subObject));
+                    } else if (subObject instanceof String){
+                        f = new Feature(featureName, Type.CATEGORICAL, new Value(subObject));
+                    } else {
+                        f = new Feature(featureName, Type.UNDEFINED, new Value(subObject));
+                    }
+                    fs.put(f, entry.getValue());
+                }
+            }
+            return fs;
+        }
+
+        public void generateOutputCandidates() { generateOutputCandidates(false); }
+
+        public void generateOutputCandidates(boolean display) {
+            this.session = kieContainer.newKieSession(this.sessionRules);
+            this.internalWorkingMemory = (InternalWorkingMemory) session;
+            Map<String, Value> features = new HashMap<>();
+            Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+            DroolsParserContext dpc = new DroolsParserContext(internalWorkingMemory, features, graph, new HashSet<>());
+            RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
+            session.addEventListener(ruleTracker);
+            KieBase kbase = session.getKieBase();
+            recursiveInsert(session, this.inputGenerator.get());
+            session.startProcess("P1");
+            session.fireAllRules();
+            session.dispose();
+
+            int outputIDX = 0;
+            this.outputAccessors = new ArrayList<>();
+            List<String> indeces = new ArrayList<>(List.of("Index"));
+            List<String> fieldNames = new ArrayList<>(List.of("Field Name"));
+            List<String> finalValues = new ArrayList<>(List.of("Final Value"));
+
+            for (Map.Entry<Rule, HashMap<String, Pair<Object, Object>>> entry : ruleTracker.differences.entrySet()) {
+                for (Map.Entry<String, Pair<Object, Object>> subEntry : entry.getValue().entrySet()) {
+                    indeces.add(Integer.toString(outputIDX));
+                    fieldNames.add(subEntry.getKey());
+                    finalValues.add(subEntry.getValue().getSecond().toString());
+                    this.outputAccessors.add(new Pair<>(entry.getKey(), subEntry.getKey()));
+                    outputIDX += 1;
+                }
+            }
+
+
+            if (display){
+                int largestInt = indeces.stream().mapToInt(String::length).max().getAsInt()+1;
+                int largestFN = fieldNames.stream().mapToInt(String::length).max().getAsInt()+1;
+                int largestFV = finalValues.stream().mapToInt(String::length).max().getAsInt()+1;
+                String fmtStr = String.format("%%%ds | %%%ds | %%%ds%n", largestInt, largestFN, largestFV);
+                System.out.println("=== OUTPUT CANDIDATES "+
+                        StringUtils.repeat("=",Math.max(0, largestInt+largestFN+largestFV - 15)));
+                System.out.printf(fmtStr, indeces.get(0), fieldNames.get(0), finalValues.get(0));
+                System.out.println(StringUtils.repeat("-",largestInt+largestFN+largestFV + 6));
+                for (int i=1; i<indeces.size(); i++){
+                    System.out.printf(fmtStr, indeces.get(i), fieldNames.get(i), finalValues.get(i));
+                }
+                System.out.println(StringUtils.repeat("=", largestInt+largestFN+largestFV + 6));
+            }
+        }
+
+        public void selectOutputIndecesFromCandidates(List<Integer> outputIndeces){
+            this.outputIndeces = outputIndeces;
+        }
+
+        public PredictionOutput runSession(){
+            this.session = kieContainer.newKieSession(this.sessionRules);
+            this.internalWorkingMemory = (InternalWorkingMemory) session;
+            Map<String, Value> features = new HashMap<>();
+            Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+
+            DroolsParserContext dpc = new DroolsParserContext(internalWorkingMemory, features, graph,  new HashSet<>());
+            RuleTracker ruleTracker = new RuleTracker(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
+            ruleTracker.setInputNumber(0);
+            ruleTracker.setOutputTargets(this.outputIndeces.stream()
+                    .map(this.outputAccessors::get)
+                    .collect(Collectors.toList()));
+            session.addEventListener(ruleTracker);
+            KieBase kbase = session.getKieBase();
+            recursiveInsert(session, this.inputGenerator.get());
+            session.startProcess("P1");
+            session.fireAllRules();
+            session.dispose();
+            return new PredictionOutput(new ArrayList<>(ruleTracker.desiredOutputs.values()));
+        }
+
+        public PredictionProvider wrap(){
+            return inputs -> supplyAsync(() -> {
+                HashMap<Feature, WriterContainer> featureWriterMap = featureExtractor();
+                List<PredictionOutput> outputs = new LinkedList<>();
+                for (PredictionInput predictionInput : inputs){
+                    for (Feature f : predictionInput.getFeatures()){
+                        for (Map.Entry<Feature, WriterContainer> writerContainerEntry : featureWriterMap.entrySet()){
+                            if (f.getName().equals(writerContainerEntry.getKey().getName())){
+                                WriterContainer writerContainer = writerContainerEntry.getValue();
+                                try {
+                                    System.out.println(writerContainer.fieldName +" <- "+f.getName() +" = " + f.getValue());
+                                    writerContainer.invoke(f.getValue().asString());
+                                } catch (IllegalAccessException | InvocationTargetException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+                    }
+                    outputs.add(runSession());
+                }
+                return outputs;
+            });
+        }
     }
 
     @Test
-    public void autowrapper() {
-        Trip trip = getDefaultTrip();
-        Order order = getSampleOrder();
+    public void autowrapper() throws ExecutionException, InterruptedException, InvocationTargetException, IllegalAccessException, InstantiationException, NoSuchMethodException {
+        // build all objects inserted into the model
+        Supplier<List<Object>> objectSupplier = () -> {
+            Trip trip = getDefaultTrip();
+            Order order = getSampleOrder();
+            CostCalculationRequest request = new CostCalculationRequest();
+            request.setTrip(trip);
+            request.setOrder(order);
+            return List.of(request);
+        };
 
-        List<Feature> features = featureExtractor(List.of(trip, order));
-        for (Feature f: features){
-            System.out.println(f);
+        DroolsWrapper droolsWrapper = new DroolsWrapper("ksession-rules", objectSupplier);
+        droolsWrapper.setFeatureExtractorFilters(List.of("numberItems", "weight"));
+        PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor().keySet()));
+        for (Feature f: samplePI.getFeatures()){
+            f.getValue()
         }
-
-//        RuleTracker ruleTracker = runSession(trip, order);
-//
-//        int outputIDX = 0;
-//        List<Pair<Rule, String>> outputAccessors = new ArrayList<>();
-//        for (Map.Entry<Rule, HashMap<String, Pair<Object, Object>>> entry : ruleTracker.differences.entrySet()){
-//            System.out.println("=== "+entry.getKey()+ " ===");
-//            for (Map.Entry<String, Pair<Object, Object>> subEntry : entry.getValue().entrySet()) {
-//                System.out.println("\t"+outputIDX+": "+subEntry.getKey()+"= "+ subEntry.getValue().getSecond());
-//                outputAccessors.add(new Pair<>(entry.getKey(), subEntry.getKey()));
-//                outputIDX += 1;
-//            }
-//        }
-//        int desiredOutputIDX = 19;
-//        RuleTracker ruleTracker1 = runSession(trip, order, outputAccessors.get(desiredOutputIDX));
-//        System.out.println(ruleTracker1.desiredOutput);
-    }
-
-    public List<Feature> featureExtractor(List<Object> inputs){
-        List<Feature> fs = new ArrayList<>();
-        for (Object o  : inputs) {
-            String rawName = o.getClass().getName() + "_" + o.hashCode();
-            HashMap<String, Object> objectContents = beanProperties(o, null, "", false);
-            for (Map.Entry<String, Object> entry : objectContents.entrySet()){
-                String featureName = rawName+"_"+entry.getKey();
-                Object subObject = entry.getValue();
-                if (subObject instanceof Number){
-                    fs.add(new Feature(featureName, Type.NUMBER, new Value(((Number) subObject).doubleValue())));
-                } else if (subObject instanceof Boolean){
-                    fs.add(new Feature(featureName, Type.BOOLEAN, new Value(subObject)));
-                } else if (subObject instanceof String){
-                    fs.add(new Feature(featureName, Type.CATEGORICAL, new Value(subObject)));
-                } else {
-                    fs.add(new Feature(featureName, Type.UNDEFINED, new Value(subObject)));
-                }
-            }
-        }
-        return fs;
+        droolsWrapper.setExcludedOutputFields(
+                Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
+                        .collect(Collectors.toSet()));
+        droolsWrapper.generateOutputCandidates(true);
+        droolsWrapper.selectOutputIndecesFromCandidates(List.of(19));
+        PredictionProvider wrappedModel = droolsWrapper.wrap();
+        System.out.println(wrappedModel.predictAsync(List.of(samplePI)).get().get(0).getOutputs());
     }
 
     public void printGraph(Graph<GraphNode, DefaultEdge> graph){

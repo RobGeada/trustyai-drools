@@ -1,8 +1,8 @@
 package cost;
 
 public class OrderLine {
-
     private Integer numberItems;
+
     private Double weight;
     private Product product;
 
@@ -23,7 +23,7 @@ public class OrderLine {
         return numberItems;
     }
 
-    public void setNumberItems(int numberItems) {
+    public void setNumberItems(Integer numberItems) {
         this.numberItems = numberItems;
     }
 
@@ -39,7 +39,7 @@ public class OrderLine {
         return weight;
     }
 
-    public void setWeight(double weight) {
+    public void setWeight(Double weight) {
         this.weight = weight;
     }
 

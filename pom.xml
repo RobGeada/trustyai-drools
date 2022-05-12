@@ -68,7 +68,11 @@
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
         </dependency>
-
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.9.4</version>
+        </dependency>
         <dependency>
             <groupId>org.kie.kogito</groupId>
             <artifactId>explainability-core</artifactId>
