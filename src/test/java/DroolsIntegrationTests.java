@@ -103,7 +103,7 @@ public class DroolsIntegrationTests {
                         UUID.randomUUID(),
                         100L);
         return explainer.explainAsync(prediction, model)
-                .get(10L, TimeUnit.MINUTES);
+                .get(11L, TimeUnit.MINUTES);
     }
 
     // automatically wrap the drools model into a prediction provider + test counterfactual generation
