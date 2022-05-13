@@ -36,6 +36,8 @@ public class DroolsIntegrationTests {
     KieServices ks = KieServices.Factory.get();
     KieContainer kieContainer = ks.getKieClasspathContainer();
 
+
+    // build the default trip input object
     public Trip getDefaultTrip(){
         City cityOfShangai = new City(City.ShangaiCityName);
         City cityOfRotterdam = new City(City.RotterdamCityName);
@@ -51,6 +53,7 @@ public class DroolsIntegrationTests {
         return trip;
     }
 
+    // generate a sample order to run the model over
     public Order getDefaultOrder(){
         // build the order to explain
         Order order = new Order("toExplain");
@@ -68,6 +71,7 @@ public class DroolsIntegrationTests {
         return order;
     }
 
+    // rui's counterfactual search helper function
     private CounterfactualResult runCounterfactualSearch(Long randomSeed, List<Output> goal,
                                                          List<Feature> features,
                                                          PredictionProvider model,
@@ -91,6 +95,8 @@ public class DroolsIntegrationTests {
         return explainer.explainAsync(prediction, model)
                 .get(10L, TimeUnit.MINUTES);
     }
+
+    // automatically wrap the drools model into a prediction provider + test counterfactual generation
     @Test
     public void testAutoWrapper() throws ExecutionException, InterruptedException, TimeoutException {
         // build the function to supply objects into the model
