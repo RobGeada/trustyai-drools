@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="205dfe45-6900-4cde-a9d7-dcddd1aec386" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/main/java/drools_integrators/DroolsWrapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/drools_integrators/DroolsWrapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/drools_integrators/GraphNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/drools_integrators/GraphNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/drools_integrators/ParserContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/drools_integrators/ParserContext.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/drools_integrators/RuleContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/drools_integrators/RuleContext.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/drools_integrators/RuleFireListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/drools_integrators/RuleFireListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/drools_integrators/Utils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/drools_integrators/Utils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/DroolsIntegrationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/DroolsIntegrationTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/drools_integrators/DroolsWrapper.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/drools_integrators/DroolsWrapper.class" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="28HiEDMoYjuiiOhwP93YXhm8Kkk" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "/home/rob/Documents/RedHat/trustyai-drools/src/test",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "Errors"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/test" />
+      <recent name="$PROJECT_DIR$/src/main/resources" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="" />
+    </key>
+  </component>
+  <component name="RunManager" selected="JUnit.DroolsIntegrationTests.testAutoWrapper">
+    <configuration name="DroolsIntegrationTests.autowrapper" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="trustyai-drools" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="DroolsIntegrationTests" />
+      <option name="METHOD_NAME" value="autowrapper" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DroolsIntegrationTests.explore" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="trustyai-drools" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value=".*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="DroolsIntegrationTests" />
+      <option name="METHOD_NAME" value="explore" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DroolsIntegrationTests.testAutoWrapper" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="trustyai-drools" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="DroolsIntegrationTests" />
+      <option name="METHOD_NAME" value="testAutoWrapper" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DroolsIntegrationTests.testTrustyAILIME" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="trustyai-drools" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value=".*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="DroolsIntegrationTests" />
+      <option name="METHOD_NAME" value="testTrustyAILIME" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="DroolsIntegrationTests.testTrustyAISHAP" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="trustyai-drools" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value=".*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="DroolsIntegrationTests" />
+      <option name="METHOD_NAME" value="testTrustyAISHAP" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="trustyai-drools [clean,install]" type="MavenRunConfiguration" factoryName="Maven" nameIsGenerated="true">
+      <MavenSettings>
+        <option name="myGeneralSettings" />
+        <option name="myRunnerSettings" />
+        <option name="myRunnerParameters">
+          <MavenRunnerParameters>
+            <option name="profiles">
+              <set />
+            </option>
+            <option name="goals">
+              <list>
+                <option value="clean" />
+                <option value="install" />
+              </list>
+            </option>
+            <option name="pomFileName" />
+            <option name="profilesMap">
+              <map />
+            </option>
+            <option name="resolveToWorkspace" value="false" />
+            <option name="workingDirPath" value="$PROJECT_DIR$" />
+          </MavenRunnerParameters>
+        </option>
+      </MavenSettings>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="JUnit.DroolsIntegrationTests.autowrapper" />
+      <item itemvalue="JUnit.DroolsIntegrationTests.explore" />
+      <item itemvalue="JUnit.DroolsIntegrationTests.testAutoWrapper" />
+      <item itemvalue="JUnit.DroolsIntegrationTests.testTrustyAILIME" />
+      <item itemvalue="JUnit.DroolsIntegrationTests.testTrustyAISHAP" />
+      <item itemvalue="Maven.trustyai-drools [clean,install]" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.DroolsIntegrationTests.testAutoWrapper" />
+        <item itemvalue="JUnit.DroolsIntegrationTests.autowrapper" />
+        <item itemvalue="JUnit.DroolsIntegrationTests.explore" />
+        <item itemvalue="JUnit.DroolsIntegrationTests.testTrustyAISHAP" />
+        <item itemvalue="JUnit.DroolsIntegrationTests.testTrustyAILIME" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="205dfe45-6900-4cde-a9d7-dcddd1aec386" name="Changes" comment="" />
+      <created>1650879799580</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1650879799580</updated>
+      <workItem from="1650879801097" duration="170263000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="org.drools.base.cost.OrderLine596625478$getNumberItems" memberName="valueType" />
+        <PinnedItemInfo parentTag="org.drools.core.impl.StatefulKnowledgeSessionImpl" memberName="entryPoints" />
+        <PinnedItemInfo parentTag="org.drools.core.util.BinaryHeapQueue" memberName="size" />
+        <PinnedItemInfo parentTag="org.drools.core.common.DefaultAgenda" memberName="activationGroups" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.NotNodeLeftTuple" memberName="handle" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.LeftTupleSinkNodeList" memberName="firstNode" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.RuleTerminalNodeLeftTuple" memberName="ruleAgendaItem" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.AccumulateNode" memberName="accumulate" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.ObjectTypeNode" memberName="objectType" />
+        <PinnedItemInfo parentTag="org.drools.core.event.rule.impl.BeforeActivationFiredEventImpl" memberName="activation" />
+        <PinnedItemInfo parentTag="org.drools.core.base.ClassFieldReader" memberName="className" />
+        <PinnedItemInfo parentTag="org.drools.core.event.rule.impl.RuleFlowGroupDeactivatedEventImpl" memberName="ruleFlowGroup" />
+        <PinnedItemInfo parentTag="org.drools.core.impl.StatefulKnowledgeSessionImpl" memberName="nodeMemories" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.BetaMemory" memberName="leftTupleMemory" />
+        <PinnedItemInfo parentTag="org.drools.core.common.DefaultAgenda" memberName="propagationList" />
+        <PinnedItemInfo parentTag="org.drools.mvel.MVELConstraint" memberName="operators" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.LeftInputAdapterNode" memberName="sink" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.RuleTerminalNode" memberName="tupleSource" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.AlphaNode" memberName="constraint" />
+        <PinnedItemInfo parentTag="java.lang.String" memberName="value" />
+        <PinnedItemInfo parentTag="org.drools.mvel.MVELConstraint" memberName="fieldValue" />
+        <PinnedItemInfo parentTag="org.drools.base.cost.OrderLine596625478$getNumberItems" memberName="fieldType" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.EntryPointNode" memberName="source" />
+        <PinnedItemInfo parentTag="org.drools.core.event.ProcessNodeTriggeredEventImpl" memberName="nodeInstance" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.ObjectTypeNode" memberName="objectMemoryEnabled" />
+        <PinnedItemInfo parentTag="java.util.concurrent.atomic.AtomicLong" memberName="value" />
+        <PinnedItemInfo parentTag="org.drools.core.impl.StatefulKnowledgeSessionImpl" memberName="propagationIdCounter" />
+        <PinnedItemInfo parentTag="org.drools.core.reteoo.NotNode" memberName="rightInput" />
+        <PinnedItemInfo parentTag="org.drools.core.impl.StatefulKnowledgeSessionImpl" memberName="agendaEventSupport" />
+        <PinnedItemInfo parentTag="org.drools.core.rule.GroupElement" memberName="children" />
+        <PinnedItemInfo parentTag="org.drools.core.common.AgendaGroupQueueImpl" memberName="nodeInstances" />
+        <PinnedItemInfo parentTag="org.drools.core.base.ValueType" memberName="classType" />
+        <PinnedItemInfo parentTag="org.drools.core.rule.Declaration" memberName="pattern" />
+        <PinnedItemInfo parentTag="org.drools.mvel.MVELConstraint" memberName="extractor" />
+      </pinned-members>
+    </pin-to-top-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/trustyai_drools$TestExercise_explore.ic" NAME="TestExercise.explore Coverage Results" MODIFIED="1651589390338" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
+      <FILTER>.*</FILTER>
+    </SUITE>
+  </component>
+</project>
