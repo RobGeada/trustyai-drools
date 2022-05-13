@@ -30,11 +30,11 @@ public class Utils {
         Boolean matchingValue;
         if (inGraph){
             GraphNode containedNode = nodeMap.get(n.hashCode());
-            matchingRuleFlow = containedNode.getRuleContext().inputNumber == n.getRuleContext().inputNumber;
+            matchingRuleFlow = containedNode.getRuleContext().getInputNumber() == n.getRuleContext().getInputNumber();
             matchingValue = Objects.equals(containedNode.getValue(), n.getValue());
             // node merge?
             if (matchingRuleFlow || matchingValue) {
-                containedNode.getCalls()[n.getRuleContext().inputNumber] += 1;
+                containedNode.getCalls()[n.getRuleContext().getInputNumber()] += 1;
                 containedNode.setValue(n.getValue());
                 return containedNode;
             }

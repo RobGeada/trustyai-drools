@@ -33,47 +33,19 @@ public class RuleFireListener extends DefaultAgendaEventListener {
     private Set<String> actualIncludedRules = new HashSet<>();
     private Set<String> actualIncludedContainers = new HashSet<>();
     private Set<String> actualExcludedContainers = new HashSet<>();
-    private List<InternalFactHandle> eventFactHandles;
+
     private final ParserContext droolsParserContext;
     private int inputNumber = 0;
     private List<Pair<Rule, String>> outputTargets;
     private HashMap<Pair<Rule, String>, Output> desiredOutputs = new HashMap<>();
-    private boolean parseGraph;
-
-    public Map<String, Map<String, Object>> getBeforeHashes() {
-        return beforeHashes;
-    }
-
-    public void setBeforeHashes(Map<String, Map<String, Object>> beforeHashes) {
-        this.beforeHashes = beforeHashes;
-    }
-
-    public Map<String, Map<String, Object>> getAfterHashes() {
-        return afterHashes;
-    }
-
-    public void setAfterHashes(Map<String, Map<String, Object>> afterHashes) {
-        this.afterHashes = afterHashes;
-    }
+    private final boolean parseGraph;
 
     public Map<Rule, Map<String, Pair<Object, Object>>> getDifferences() {
         return differences;
     }
 
-    public void setDifferences(Map<Rule, Map<String, Pair<Object, Object>>> differences) {
-        this.differences = differences;
-    }
-
-    public Set<String> getExcludedRules() {
-        return excludedRules;
-    }
-
     public void setExcludedRules(Set<String> excludedRules) {
         this.excludedRules = excludedRules;
-    }
-
-    public Set<String> getIncludedRules() {
-        return includedRules;
     }
 
     public void setIncludedRules(Set<String> includedRules) {
@@ -84,77 +56,26 @@ public class RuleFireListener extends DefaultAgendaEventListener {
         return includedOutputContainers;
     }
 
-    public void setIncludedOutputContainers(Set<String> includedOutputContainers) {
-        this.includedOutputContainers = includedOutputContainers;
-    }
-
     public Set<String> getExcludedOutputContainers() {
         return excludedOutputContainers;
-    }
-
-    public void setExcludedOutputContainers(Set<String> excludedOutputContainers) {
-        this.excludedOutputContainers = excludedOutputContainers;
     }
 
     public Set<String> getActualIncludedRules() {
         return actualIncludedRules;
     }
 
-    public void setActualIncludedRules(Set<String> actualIncludedRules) {
-        this.actualIncludedRules = actualIncludedRules;
-    }
-
     public Set<String> getActualIncludedContainers() {
         return actualIncludedContainers;
-    }
-
-    public void setActualIncludedContainers(Set<String> actualIncludedContainers) {
-        this.actualIncludedContainers = actualIncludedContainers;
     }
 
     public Set<String> getActualExcludedContainers() {
         return actualExcludedContainers;
     }
 
-    public void setActualExcludedContainers(Set<String> actualExcludedContainers) {
-        this.actualExcludedContainers = actualExcludedContainers;
-    }
-
-    public List<InternalFactHandle> getEventFactHandles() {
-        return eventFactHandles;
-    }
-
-    public void setEventFactHandles(List<InternalFactHandle> eventFactHandles) {
-        this.eventFactHandles = eventFactHandles;
-    }
-
-    public ParserContext getDroolsParserContext() {
-        return droolsParserContext;
-    }
-
-    public int getInputNumber() {
-        return inputNumber;
-    }
-
-    public List<Pair<Rule, String>> getOutputTargets() {
-        return outputTargets;
-    }
-
     public HashMap<Pair<Rule, String>, Output> getDesiredOutputs() {
         return desiredOutputs;
     }
 
-    public void setDesiredOutputs(HashMap<Pair<Rule, String>, Output> desiredOutputs) {
-        this.desiredOutputs = desiredOutputs;
-    }
-
-    public boolean isParseGraph() {
-        return parseGraph;
-    }
-
-    public void setParseGraph(boolean parseGraph) {
-        this.parseGraph = parseGraph;
-    }
 
     public RuleFireListener(Set<String> includedRules, Set<String> excludedRules, Set<String> includedOutputContainers,
                             Set<String> excludedOutputContainers, ParserContext droolsParserContext, boolean parseGraph) {
@@ -205,7 +126,6 @@ public class RuleFireListener extends DefaultAgendaEventListener {
     public void beforeMatchFired(BeforeMatchFiredEvent event) {
         super.beforeMatchFired(event);
         List<InternalFactHandle> eventFactHandles = (List<InternalFactHandle>) event.getMatch().getFactHandles();
-        this.eventFactHandles = eventFactHandles;
         if (ruleInclusionCheck(event.getMatch().getRule().getName())) {
             for (InternalFactHandle fh : eventFactHandles) {
                 beforeHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this));

@@ -195,24 +195,24 @@ public class DroolsWrapper {
         Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         ParserContext dpc = new ParserContext(internalWorkingMemory, features, graph,  new HashSet<>());
-        RuleFireListener ruleTracker = new RuleFireListener(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
-        ruleTracker.setInputNumber(0);
-        ruleTracker.setOutputTargets(this.outputIndeces.stream()
+        RuleFireListener ruleFireListener = new RuleFireListener(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
+        ruleFireListener.setInputNumber(0);
+        ruleFireListener.setOutputTargets(this.outputIndeces.stream()
                 .map(this.outputAccessors::get)
                 .collect(Collectors.toList()));
-        session.addEventListener(ruleTracker);
+        session.addEventListener(ruleFireListener);
         recursiveInsert(session, droolsInputs);
         session.startProcess("P1");
         session.fireAllRules();
         session.dispose();
-        System.out.println("desiredout: "+ruleTracker.getDesiredOutputs().values()+"\n");
-        return new PredictionOutput(new ArrayList<>(ruleTracker.getDesiredOutputs().values()));
+        System.out.println("Output: "+new ArrayList<>(ruleFireListener.getDesiredOutputs().values()).get(0).getValue()+"\n");
+        return new PredictionOutput(new ArrayList<>(ruleFireListener.getDesiredOutputs().values()));
     }
 
     public PredictionProvider wrap(){
         return inputs -> supplyAsync(() -> {
             List<Object> droolsInputs = this.inputGenerator.get();
-            System.out.println("orig: " + inputs.get(0).getFeatures().stream().map(Feature::getValue).collect(Collectors.toList()));
+            System.out.println("Input:  " + inputs.get(0).getFeatures().stream().map(Feature::getValue).collect(Collectors.toList()));
             HashMap<Feature, FeatureWriter> featureWriterMap = featureExtractor(droolsInputs);
             List<PredictionOutput> outputs = new LinkedList<>();
             for (PredictionInput predictionInput : inputs){

@@ -12,14 +12,13 @@ import java.util.Map;
 import java.util.Set;
 
 public class ParserContext {
-    InternalWorkingMemory internalWorkingMemory;
-    Map<String, Value> features = new HashMap<>();
-    Graph<GraphNode, DefaultEdge> graph;
-    HashMap<Integer, GraphNode> graphNodeMap;
-    List<GraphNode> previousTerminals = new ArrayList<>();
-    List<GraphNode> currentTerminals = new ArrayList<>();
-
-    Set<String> excludedFeatureObjects;
+    protected final InternalWorkingMemory internalWorkingMemory;
+    protected Map<String, Value> features = new HashMap<>();
+    protected Graph<GraphNode, DefaultEdge> graph;
+    protected HashMap<Integer, GraphNode> graphNodeMap;
+    protected List<GraphNode> previousTerminals = new ArrayList<>();
+    protected List<GraphNode> currentTerminals = new ArrayList<>();
+    protected Set<String> excludedFeatureObjects;
 
     public ParserContext(InternalWorkingMemory internalWorkingMemory, Map<String, Value> features, Graph<GraphNode, DefaultEdge> graph, Set<String> excludedFeatureObjects) {
         this.internalWorkingMemory = internalWorkingMemory;

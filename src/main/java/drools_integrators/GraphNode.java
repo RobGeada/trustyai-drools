@@ -20,8 +20,8 @@ public class GraphNode {
         this.type = type;
         this.ruleContext = ruleContext;
         this.id = id;
-        this.calls[ruleContext.inputNumber] = 1;
-        inputNumbers.add(ruleContext.inputNumber);
+        this.calls[ruleContext.getInputNumber()] = 1;
+        inputNumbers.add(ruleContext.getInputNumber());
         this.value = null;
         this.field = "";
     }
@@ -30,8 +30,8 @@ public class GraphNode {
         this.type = type;
         this.ruleContext = ruleContext;
         this.id = id;
-        this.calls[ruleContext.inputNumber] = 1;
-        inputNumbers.add(ruleContext.inputNumber);
+        this.calls[ruleContext.getInputNumber()] = 1;
+        inputNumbers.add(ruleContext.getInputNumber());
         this.value = value;
         this.field = field;
     }
@@ -44,22 +44,22 @@ public class GraphNode {
         if (this.type.contains("Terminal")) {
             return id == graphNode.id
                     && Objects.equals(type, graphNode.type)
-                    && (Objects.equals(ruleContext.inputNumber, graphNode.ruleContext.inputNumber) || Objects.equals(value, graphNode.value))
+                    && (Objects.equals(ruleContext.getInputNumber(), graphNode.ruleContext.getInputNumber()) || Objects.equals(value, graphNode.value))
                     && Objects.equals(field, graphNode.field)
-                    && Objects.equals(ruleContext.rule.getName(), graphNode.ruleContext.rule.getName());
+                    && Objects.equals(ruleContext.getRule().getName(), graphNode.ruleContext.getRule().getName());
         } else {
             return id == graphNode.id
                     && Objects.equals(type, graphNode.type)
-                    && Objects.equals(ruleContext.rule.getName(), graphNode.ruleContext.rule.getName());
+                    && Objects.equals(ruleContext.getRule().getName(), graphNode.ruleContext.getRule().getName());
         }
     }
 
     @Override
     public int hashCode() {
         if (this.finalized) {
-            return Objects.hash(type, id, ruleContext.inputNumber, ruleContext.rule, field);
+            return Objects.hash(type, id, ruleContext.getInputNumber(), ruleContext.getRule(), field);
         } else if (this.type.contains("Terminal")) {
-            return Objects.hash(type, id, ruleContext.rule, field);
+            return Objects.hash(type, id, ruleContext.getRule(), field);
         } else {
             return Objects.hash(type);
         }
