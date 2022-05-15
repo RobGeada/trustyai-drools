@@ -199,7 +199,6 @@ public class DroolsIntegrationTests {
         ShapResults results = ske.explainAsync(samplePrediction, wrappedModel).get();
         System.out.println(results.toString());
     }
-
     @Test
     public void testAutoWrapperSHAP() throws ExecutionException, InterruptedException, TimeoutException {
         // build the function to supply objects into the model
