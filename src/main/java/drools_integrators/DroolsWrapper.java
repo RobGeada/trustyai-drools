@@ -8,8 +8,10 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.kie.api.definition.rule.Rule;
 import org.kie.api.runtime.KieContainer;
+import org.kie.api.runtime.KieContainerSessionsPool;
 import org.kie.api.runtime.KieSession;
 import org.kie.kogito.explainability.model.Feature;
+import org.kie.kogito.explainability.model.FeatureFactory;
 import org.kie.kogito.explainability.model.PredictionInput;
 import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
@@ -35,7 +37,7 @@ import static drools_integrators.BeanReflectors.beanWriteProperties;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 public class DroolsWrapper {
-    private final KieContainer kieContainer;
+    private final KieContainerSessionsPool pool;
     private List<String> featureWriterFilters;
     private List<Pattern> featureWriterRegexs;
 
@@ -75,9 +77,9 @@ public class DroolsWrapper {
 
 
     public DroolsWrapper(KieContainer kieContainer, String sessionRules, Supplier<List<Object>> inputGenerator) {
-        this.kieContainer = kieContainer;
         this.inputGenerator = inputGenerator;
         this.sessionRules = sessionRules;
+        this.pool = kieContainer.newKieSessionsPool(100);
     }
 
     public void setFeatureExtractorFilters(List<String> filters) {
@@ -120,11 +122,11 @@ public class DroolsWrapper {
                 if (subObject instanceof Number){
                     f = new Feature(featureName, Type.NUMBER, new Value(subObject), constrained, featureDomain);
                 } else if (subObject instanceof Boolean){
-                    f = new Feature(featureName, Type.BOOLEAN, new Value(subObject),false, featureDomain);
+                    f = new Feature(featureName, Type.BOOLEAN, new Value(subObject),constrained, featureDomain);
                 } else if (subObject instanceof String){
-                    f = new Feature(featureName, Type.CATEGORICAL, new Value(subObject),false, featureDomain);
+                    f = new Feature(featureName, Type.CATEGORICAL, new Value(subObject),constrained, featureDomain);
                 } else {
-                    f = new Feature(featureName, Type.UNDEFINED, new Value(subObject),false, featureDomain);
+                    f = new Feature(featureName, Type.UNDEFINED, new Value(subObject),constrained, featureDomain);
                 }
                 fs.put(f, entry.getValue());
             }
@@ -137,7 +139,7 @@ public class DroolsWrapper {
 
     // generate the output candidate accessor dictionary, optionally print it out
     public void generateOutputCandidates(boolean display) {
-        this.session = kieContainer.newKieSession(this.sessionRules);
+        this.session = this.pool.newKieSession(this.sessionRules);
         this.internalWorkingMemory = (InternalWorkingMemory) session;
         Map<String, Value> features = new HashMap<>();
         Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
@@ -189,8 +191,8 @@ public class DroolsWrapper {
 
 
     private PredictionOutput runSession(List<Object> droolsInputs){
-        this.session = kieContainer.newKieSession(this.sessionRules);
-        this.internalWorkingMemory = (InternalWorkingMemory) session;
+        this.session = this.pool.newKieSession(this.sessionRules);
+        final InternalWorkingMemory internalWorkingMemory = (InternalWorkingMemory) session;
         Map<String, Value> features = new HashMap<>();
         Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 

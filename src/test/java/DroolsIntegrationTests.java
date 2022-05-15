@@ -7,6 +7,7 @@ import org.kie.kogito.explainability.local.counterfactual.CounterfactualConfig;
 import org.kie.kogito.explainability.local.counterfactual.CounterfactualExplainer;
 import org.kie.kogito.explainability.local.counterfactual.CounterfactualResult;
 import org.kie.kogito.explainability.local.counterfactual.SolverConfigBuilder;
+import org.kie.kogito.explainability.local.counterfactual.entities.CounterfactualEntity;
 import org.kie.kogito.explainability.model.CounterfactualPrediction;
 import org.kie.kogito.explainability.model.Feature;
 import org.kie.kogito.explainability.model.Output;
@@ -22,6 +23,7 @@ import org.optaplanner.core.config.solver.SolverConfig;
 import org.optaplanner.core.config.solver.termination.TerminationConfig;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -91,7 +93,7 @@ public class DroolsIntegrationTests {
                         output,
                         null,
                         UUID.randomUUID(),
-                        600L);
+                        100L);
         return explainer.explainAsync(prediction, model)
                 .get(10L, TimeUnit.MINUTES);
     }
@@ -115,7 +117,7 @@ public class DroolsIntegrationTests {
         // setup Feature extraction
         droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)"));
         for (Feature f: droolsWrapper.featureExtractor(objectSupplier.get()).keySet()) {
-            droolsWrapper.addFeatureDomain(f.getName(), NumericalFeatureDomain.create(0., ((Number) f.getValue().getUnderlyingObject()).doubleValue()));
+            droolsWrapper.addFeatureDomain(f.getName(), NumericalFeatureDomain.create(0., ((Number) f.getValue().getUnderlyingObject()).doubleValue() * 2.0));
         }
         PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
 
@@ -129,13 +131,20 @@ public class DroolsIntegrationTests {
         // wrap model into predictionprovider
         PredictionProvider wrappedModel = droolsWrapper.wrap();
         System.out.println("== Original Output ==");
-        wrappedModel.predictAsync(List.of(samplePI)).get().get(0).getOutputs().get(0).getValue();
+        List<PredictionInput> inputs = List.of(samplePI);
+        wrappedModel.predictAsync(inputs).get().get(0).getOutputs().get(0).getValue();
 
         // run counterfactual
         List<Output> goal = new ArrayList<>();
-        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(1000000.), 1.0));
-        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .05);
-        System.out.println(result.getFeatures());
+        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(1_000_000.), 0.0));
+        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .1);
+
+        List<PredictionInput> cfInputs = List.of(new PredictionInput(result.getEntities().stream().map(CounterfactualEntity::asFeature).collect(Collectors.toList())));
+        for (CounterfactualEntity entity : result.getEntities()) {
+            System.out.println(entity.asFeature());
+        }
+
+        System.out.println(wrappedModel.predictAsync(cfInputs).get().get(0).getOutputs().get(0).getValue());
         System.out.println(result.isValid());
         System.out.println(result.getOutput().get(0).getOutputs());
     }
