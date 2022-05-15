@@ -144,9 +144,15 @@ public class DroolsIntegrationTests {
 
         // run counterfactual
         List<Output> goal = new ArrayList<>();
-        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(2000000.), 0.0d));
-        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .01);
-        System.out.println(result.getEntities().stream().map(CounterfactualEntity::asFeature).collect(Collectors.toList()));
+        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(1_000_000.), 0.0));
+        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .1);
+
+        List<PredictionInput> cfInputs = List.of(new PredictionInput(result.getEntities().stream().map(CounterfactualEntity::asFeature).collect(Collectors.toList())));
+        for (CounterfactualEntity entity : result.getEntities()) {
+            System.out.println(entity.asFeature());
+        }
+
+        System.out.println(wrappedModel.predictAsync(cfInputs).get().get(0).getOutputs().get(0).getValue());
         System.out.println(result.isValid());
         System.out.println(result.getOutput().get(0).getOutputs());
     }
