@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static drools_integrators.BeanReflectors.beanProperties;
 import static drools_integrators.ReteTraverser.parseTerminalNode;
@@ -26,13 +27,19 @@ public class RuleFireListener extends DefaultAgendaEventListener {
     private Map<String, Map<String, Object>> beforeHashes = new HashMap<>();
     private Map<String, Map<String, Object>> afterHashes = new HashMap<>();
     private Map<Rule, Map<String, Pair<Object, Object>>> differences = new HashMap<>();
+
     private Set<String> excludedRules = new HashSet<>();
     private Set<String> includedRules = new HashSet<>();
-    private Set<String> includedOutputContainers = new HashSet<>();
-    private Set<String> excludedOutputContainers = new HashSet<>();
+    private Set<String> includedOutputFields = new HashSet<>();
+    private Set<String> excludedOutputFields = new HashSet<>();
+    private Set<String> includedOutputObjects = new HashSet<>();
+    private Set<String> excludedOutputObjects = new HashSet<>();
     private Set<String> actualIncludedRules = new HashSet<>();
-    private Set<String> actualIncludedContainers = new HashSet<>();
-    private Set<String> actualExcludedContainers = new HashSet<>();
+    private Set<String> actualExcludedRules = new HashSet<>();
+    private Set<String> actualIncludedObjects = new HashSet<>();
+    private Set<String> actualExcludedObjects = new HashSet<>();
+    private Set<String> actualIncludedFields = new HashSet<>();
+    private Set<String> actualExcludedFields = new HashSet<>();
 
     private final ParserContext droolsParserContext;
     private int inputNumber = 0;
@@ -44,45 +51,55 @@ public class RuleFireListener extends DefaultAgendaEventListener {
         return differences;
     }
 
-    public void setExcludedRules(Set<String> excludedRules) {
-        this.excludedRules = excludedRules;
+    public Set<String> getIncludedOutputObjects() {
+        return includedOutputObjects;
     }
 
-    public void setIncludedRules(Set<String> includedRules) {
-        this.includedRules = includedRules;
-    }
-
-    public Set<String> getIncludedOutputContainers() {
-        return includedOutputContainers;
-    }
-
-    public Set<String> getExcludedOutputContainers() {
-        return excludedOutputContainers;
+    public Set<String> getExcludedOutputObjects() {
+        return excludedOutputObjects;
     }
 
     public Set<String> getActualIncludedRules() {
         return actualIncludedRules;
     }
 
-    public Set<String> getActualIncludedContainers() {
-        return actualIncludedContainers;
+    public Set<String> getActualIncludedObjects() {
+        return actualIncludedObjects;
     }
 
-    public Set<String> getActualExcludedContainers() {
-        return actualExcludedContainers;
+    public Set<String> getActualExcludedObjects() {
+        return actualExcludedObjects;
     }
+
+    public Set<String> getExcludedRules() { return excludedRules;}
+
+    public Set<String> getIncludedRules() {return includedRules;}
+
+    public Set<String> getIncludedOutputFields() {return includedOutputFields;}
+
+    public Set<String> getExcludedOutputFields() {return excludedOutputFields;}
+
+    public Set<String> getActualExcludedRules() {return actualExcludedRules;}
+
+    public Set<String> getActualIncludedFields() {return actualIncludedFields;}
+
+    public Set<String> getActualExcludedFields() {return actualExcludedFields;}
 
     public HashMap<Pair<Rule, String>, Output> getDesiredOutputs() {
         return desiredOutputs;
     }
 
 
-    public RuleFireListener(Set<String> includedRules, Set<String> excludedRules, Set<String> includedOutputContainers,
-                            Set<String> excludedOutputContainers, ParserContext droolsParserContext, boolean parseGraph) {
+    public RuleFireListener(Set<String> includedRules, Set<String> excludedRules,
+                            Set<String> includedOutputFields, Set<String> excludedOutputFields,
+                            Set<String> includedOutputObjects, Set<String> excludedOutputObjects,
+                            ParserContext droolsParserContext, boolean parseGraph) {
         this.includedRules = includedRules;
         this.excludedRules = excludedRules;
-        this.includedOutputContainers = includedOutputContainers;
-        this.excludedOutputContainers = excludedOutputContainers;
+        this.includedOutputObjects = includedOutputObjects;
+        this.excludedOutputObjects = excludedOutputObjects;
+        this.includedOutputFields = includedOutputFields;
+        this.excludedOutputFields = excludedOutputFields;
         this.droolsParserContext = droolsParserContext;
         this.parseGraph = parseGraph;
     }
@@ -109,16 +126,35 @@ public class RuleFireListener extends DefaultAgendaEventListener {
         }
     }
 
+    private boolean generalInclusionCheck(String name, Set<String> included, Set<String> excluded, Set<String> inclusionTracker, Set<String> exclusionTracker, boolean contains){
+        boolean include = true;
+        Predicate<String> predicate = contains ? name::contains : name::equals;
+
+        if (!included.isEmpty()) {
+            include= includedRules.stream().anyMatch(predicate);
+        }
+        if (!excluded.isEmpty()) {
+            include &= excluded.stream().noneMatch(predicate);
+        }
+        if (include) {
+            inclusionTracker.add(name);
+        } else {
+            exclusionTracker.add(name);
+        }
+        return include;
+    }
+
     // does this particular Rule satisfy the inclusion/exclusion requirements
     public boolean ruleInclusionCheck(String ruleName) {
-        boolean includeThisRule = true;
-        if (includedRules.size() > 0) {
-            includeThisRule = includedRules.stream().anyMatch(ruleName::contains);
-        }
-        if (excludedRules.size() > 0) {
-            includeThisRule &= excludedRules.stream().noneMatch(ruleName::contains);
-        }
-        return includeThisRule;
+        return generalInclusionCheck(ruleName, includedRules, excludedRules, actualIncludedRules, actualExcludedRules, true);
+    }
+
+    public boolean objectInclusionCheck(String objectName) {
+        return generalInclusionCheck(objectName, includedOutputObjects, excludedOutputObjects, actualIncludedObjects, actualExcludedObjects, true);
+    }
+
+    public boolean fieldInclusionCheck(String fieldName) {
+        return generalInclusionCheck(fieldName, includedOutputFields, excludedOutputFields, actualIncludedFields, actualExcludedFields, true);
     }
 
     // before a rule fires, catalog every object associated with the rule
@@ -128,7 +164,9 @@ public class RuleFireListener extends DefaultAgendaEventListener {
         List<InternalFactHandle> eventFactHandles = (List<InternalFactHandle>) event.getMatch().getFactHandles();
         if (ruleInclusionCheck(event.getMatch().getRule().getName())) {
             for (InternalFactHandle fh : eventFactHandles) {
-                beforeHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this));
+                if (objectInclusionCheck(fh.getObject().getClass().getName())) {
+                    beforeHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this));
+                }
             }
         }
     }
@@ -141,7 +179,9 @@ public class RuleFireListener extends DefaultAgendaEventListener {
         if (ruleInclusionCheck(event.getMatch().getRule().getName())) {
             List<InternalFactHandle> eventFactHandles = (List<InternalFactHandle>) event.getMatch().getFactHandles();
             for (InternalFactHandle fh : eventFactHandles) {
-                afterHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this));
+                if (objectInclusionCheck(fh.getObject().getClass().getName())) {
+                    afterHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this));
+                }
             }
 
             Set<String> keySets = new HashSet<>(afterHashes.keySet());

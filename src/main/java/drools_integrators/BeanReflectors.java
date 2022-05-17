@@ -14,7 +14,9 @@ import java.util.Map;
 
 public class BeanReflectors {
 
-    private BeanReflectors(){ throw new IllegalStateException("Utility class");}
+    private BeanReflectors() {
+        throw new IllegalStateException("Utility class");
+    }
 
 
     // extract all gettable fields from object recursively into dictionary of field_name:Object
@@ -26,17 +28,26 @@ public class BeanReflectors {
     public static Map<String, Object> beanProperties(final Object bean, RuleFireListener ruleTracker, String prefix, boolean verbose) {
         final HashMap<String, Object> result = new HashMap<>();
         String name = prefix.equals("") ? bean.getClass().getName() : prefix;
+        if (ruleTracker != null && !ruleTracker.objectInclusionCheck(name)){
+            return result;
+        }
 
         // check if object itself is a "base" type
-        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean){
-            if (verbose) {System.out.printf("\t %s=%s, primitive? %b", name, bean, true);}
+        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean) {
+            if (verbose) {
+                System.out.printf("\t %s=%s, primitive? %b", name, bean, true);
+            }
             result.put(name, bean);
-            if (verbose){System.out.println("...adding to result");}
+            if (verbose) {
+                System.out.println("...adding to result");
+            }
             return result;
         }
 
         // otherwise investigate its contents
-        if (verbose){ System.out.println("Exploring "+ name);}
+        if (verbose) {
+            System.out.println("Exploring " + name);
+        }
         PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[0];
         try {
             propertyDescriptors = Introspector.getBeanInfo(bean.getClass(), Object.class).getPropertyDescriptors();
@@ -54,41 +65,27 @@ public class BeanReflectors {
                     ex.printStackTrace();
                     //ignore, non-readable read method
                 }
-                if (read == null){ continue; }
+                if (read == null) {
+                    continue;
+                }
 
                 String thisName = name + "." + propertyDescriptor.getName();
-                boolean inContainers = true;
-                if (ruleTracker != null) {
-                    if (ruleTracker.getIncludedOutputContainers().size() > 0) {
-                        inContainers = ruleTracker.getIncludedOutputContainers().stream().anyMatch(propertyDescriptor.getName()::contains);
-                    }
-                    if (ruleTracker.getExcludedOutputContainers().size() > 0) {
-                        inContainers &= ruleTracker.getExcludedOutputContainers().stream().noneMatch(propertyDescriptor.getName()::contains);
-                    }
-                }
+                boolean allowedField = ruleTracker == null || ruleTracker.fieldInclusionCheck(thisName);
 
                 if (verbose) {
                     System.out.printf("\t %s=%s, primitive? %b, %s in Containers? %b",
                             thisName, read,
                             (read instanceof Number || read instanceof String || read instanceof Boolean),
-                            propertyDescriptor.getName(), inContainers);
-                }
-
-                if (ruleTracker != null) {
-                    if (inContainers) {
-                        ruleTracker.getActualIncludedContainers().add(thisName);
-                    } else {
-                        ruleTracker.getActualExcludedContainers().add(thisName);
-                    }
+                            propertyDescriptor.getName(), allowedField);
                 }
 
                 // if the get'ted object is a 'base' type:
-                if ((read instanceof Number || read instanceof String || read instanceof Boolean) && inContainers) {
+                if ((read instanceof Number || read instanceof String || read instanceof Boolean) && allowedField) {
                     result.put(thisName, read);
                     if (verbose) {
                         System.out.println("...adding to result");
                     }
-                } else if (read instanceof Iterable && inContainers) { //is is an iterable object?
+                } else if (read instanceof Iterable && allowedField) { //is is an iterable object?
                     int i = 0;
                     if (verbose) {
                         System.out.printf("%n=== recursing %s ======================%n", name);
@@ -105,7 +102,7 @@ public class BeanReflectors {
                     if (verbose) {
                         System.out.println("=== end recursion ==================================\n");
                     }
-                } else if (inContainers) { // if the object is not base or iterable, but is a specified container:
+                } else if (allowedField) { // if the object is not base or iterable, but is a specified container:
                     if (verbose) {
                         System.out.println("...unpacking ======================");
                     }
@@ -121,7 +118,6 @@ public class BeanReflectors {
                 }
             }
         }
-
         return result;
     }
 
@@ -142,16 +138,20 @@ public class BeanReflectors {
         String name = prefix.equals("") ? bean.getClass().getName() : prefix;
 
         // check if object itself is a "base" type
-        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean){
-            if (verbose) {System.out.printf("\t %s=%s, primitive? %b", name, bean, true);}
+        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean) {
+            if (verbose) {
+                System.out.printf("\t %s=%s, primitive? %b", name, bean, true);
+            }
             return result;
         }
 
         // otherwise investigate its contents
-        if (verbose){ System.out.printf("%sExploring %s:%n", verbosePrefix, name);}
+        if (verbose) {
+            System.out.printf("%sExploring %s:%n", verbosePrefix, name);
+        }
         ConvertingWrapDynaBean convertingWrapDynaBean = new ConvertingWrapDynaBean(bean);
         DynaClass dynaClass = convertingWrapDynaBean.getDynaClass();
-        for (DynaProperty dynaProperty : dynaClass.getDynaProperties()){
+        for (DynaProperty dynaProperty : dynaClass.getDynaProperties()) {
             Method writeMethod = null;
             Object read = null;
             try {
@@ -160,9 +160,11 @@ public class BeanReflectors {
                 writeMethod.invoke(convertingWrapDynaBean, dynaProperty.getName(), read);
             } catch (Exception ex) {
                 //ignore non-readable read method or non-writeable write
-                if (verbose) {ex.printStackTrace();}
+                if (verbose) {
+                    ex.printStackTrace();
+                }
             }
-            if (read == null || writeMethod ==null) {
+            if (read == null || writeMethod == null) {
                 continue;
             }
             String thisName = name + "." + dynaProperty.getName();
@@ -219,22 +221,28 @@ public class BeanReflectors {
         String name = prefix.equals("") ? bean.getClass().getName() : prefix;
 
         // check if object itself is a "base" type
-        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean){
-            if (verbose) {System.out.printf("\t %s=%s, primitive? %b", name, bean, true);}
+        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean) {
+            if (verbose) {
+                System.out.printf("\t %s=%s, primitive? %b", name, bean, true);
+            }
             return result;
         }
 
         // otherwise investigate its contents
-        if (verbose){ System.out.printf("%sExploring %s:%n", verbosePrefix, name);}
+        if (verbose) {
+            System.out.printf("%sExploring %s:%n", verbosePrefix, name);
+        }
         ConvertingWrapDynaBean convertingWrapDynaBean = new ConvertingWrapDynaBean(bean);
         DynaClass dynaClass = convertingWrapDynaBean.getDynaClass();
-        for (DynaProperty dynaProperty : dynaClass.getDynaProperties()){
+        for (DynaProperty dynaProperty : dynaClass.getDynaProperties()) {
             Object read = null;
             try {
                 read = convertingWrapDynaBean.get(dynaProperty.getName());
             } catch (Exception ex) {
                 //ignore non-readable read method or non-writeable write
-                if (verbose) {ex.printStackTrace();}
+                if (verbose) {
+                    ex.printStackTrace();
+                }
             }
             if (read == null) {
                 continue;

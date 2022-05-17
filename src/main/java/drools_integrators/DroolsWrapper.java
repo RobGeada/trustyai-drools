@@ -11,7 +11,6 @@ import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieContainerSessionsPool;
 import org.kie.api.runtime.KieSession;
 import org.kie.kogito.explainability.model.Feature;
-import org.kie.kogito.explainability.model.FeatureFactory;
 import org.kie.kogito.explainability.model.PredictionInput;
 import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
@@ -44,9 +43,6 @@ public class DroolsWrapper {
     private Map<String, FeatureDomain> featureDomainMap = new HashMap<>();
 
     private Supplier<List<Object>> inputGenerator;
-
-    private KieSession session;
-    private InternalWorkingMemory internalWorkingMemory;
     private List<Pair<Rule, String>> outputAccessors;
 
     private List<Integer>outputIndeces;
@@ -55,6 +51,8 @@ public class DroolsWrapper {
 
     private Set<String> includedOutputRules = new HashSet<>();
     private Set<String> excludedOutputRules= new HashSet<>();
+    private Set<String> includedOutputObjects = new HashSet<>();
+    private Set<String> excludedOutputObjects = new HashSet<>();
     private Set<String> includedOutputFields= new HashSet<>();
     private Set<String> excludedOutputFields= new HashSet<>();
 
@@ -73,6 +71,14 @@ public class DroolsWrapper {
 
     public void setExcludedOutputFields(Set<String> excludedOutputFields) {
         this.excludedOutputFields = excludedOutputFields;
+    }
+
+    public void setIncludedOutputObjects(Set<String> includedOutputObjects) {
+        this.includedOutputObjects = includedOutputObjects;
+    }
+
+    public void setExcludedOutputObjects(Set<String> excludedOutputObjects) {
+        this.excludedOutputObjects = excludedOutputObjects;
     }
 
 
@@ -139,13 +145,17 @@ public class DroolsWrapper {
 
     // generate the output candidate accessor dictionary, optionally print it out
     public void generateOutputCandidates(boolean display) {
-        this.session = this.pool.newKieSession(this.sessionRules);
-        this.internalWorkingMemory = (InternalWorkingMemory) session;
+        KieSession session = this.pool.newKieSession(this.sessionRules);
+        InternalWorkingMemory internalWorkingMemory = (InternalWorkingMemory) session;
         Map<String, Value> features = new HashMap<>();
         Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
         ParserContext dpc = new ParserContext(internalWorkingMemory, features, graph, new HashSet<>());
-        RuleFireListener ruleTracker = new RuleFireListener(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
-        session.addEventListener(ruleTracker);
+        RuleFireListener ruleFireListener = new RuleFireListener(
+                includedOutputRules, excludedOutputRules,
+                includedOutputFields, excludedOutputFields,
+                includedOutputObjects, excludedOutputObjects,
+                dpc, false);
+        session.addEventListener(ruleFireListener);
         recursiveInsert(session, this.inputGenerator.get());
         session.startProcess("P1");
         session.fireAllRules();
@@ -157,7 +167,7 @@ public class DroolsWrapper {
         List<String> fieldNames = new ArrayList<>(List.of("Field Name"));
         List<String> finalValues = new ArrayList<>(List.of("Final Value"));
 
-        for (Map.Entry<Rule, Map<String, Pair<Object, Object>>> entry : ruleTracker.getDifferences().entrySet()) {
+        for (Map.Entry<Rule, Map<String, Pair<Object, Object>>> entry : ruleFireListener.getDifferences().entrySet()) {
             for (Map.Entry<String, Pair<Object, Object>> subEntry : entry.getValue().entrySet()) {
                 indeces.add(Integer.toString(outputIDX));
                 fieldNames.add(subEntry.getKey());
@@ -191,13 +201,17 @@ public class DroolsWrapper {
 
 
     private PredictionOutput runSession(List<Object> droolsInputs){
-        this.session = this.pool.newKieSession(this.sessionRules);
+        KieSession session = this.pool.newKieSession(this.sessionRules);
         final InternalWorkingMemory internalWorkingMemory = (InternalWorkingMemory) session;
         Map<String, Value> features = new HashMap<>();
         Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         ParserContext dpc = new ParserContext(internalWorkingMemory, features, graph,  new HashSet<>());
-        RuleFireListener ruleFireListener = new RuleFireListener(includedOutputRules, excludedOutputRules, includedOutputFields, excludedOutputFields, dpc, false);
+        RuleFireListener ruleFireListener = new RuleFireListener(
+                includedOutputRules, excludedOutputRules,
+                includedOutputFields, excludedOutputFields,
+                includedOutputObjects, excludedOutputObjects,
+                dpc, false);
         ruleFireListener.setInputNumber(0);
         ruleFireListener.setOutputTargets(this.outputIndeces.stream()
                 .map(this.outputAccessors::get)
@@ -207,6 +221,8 @@ public class DroolsWrapper {
         session.startProcess("P1");
         session.fireAllRules();
         session.dispose();
+        System.out.println("Included Objects: "+ruleFireListener.getActualIncludedObjects());
+        System.out.println("Included Fields: "+ruleFireListener.getActualIncludedFields());
         System.out.println("Output: "+new ArrayList<>(ruleFireListener.getDesiredOutputs().values()).get(0).getValue()+"\n");
         return new PredictionOutput(new ArrayList<>(ruleFireListener.getDesiredOutputs().values()));
     }
@@ -232,6 +248,7 @@ public class DroolsWrapper {
                 }
                 outputs.add(runSession(droolsInputs));
             }
+
             return outputs;
         });
     }

@@ -105,6 +105,47 @@ public class DroolsIntegrationTests {
                 .get(11L, TimeUnit.MINUTES);
     }
 
+    @Test
+    public void singleRun() throws ExecutionException, InterruptedException, TimeoutException {
+        // build the function to supply objects into the model
+        Supplier<List<Object>> objectSupplier = () -> {
+            Trip trip = getDefaultTrip();
+            Order order = getDefaultOrder();
+            CostCalculationRequest request = new CostCalculationRequest();
+            request.setTrip(trip);
+            request.setOrder(order);
+            return List.of(request);
+        };
+
+        // initialize the wrapper
+        DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"ksession-rules", objectSupplier);
+
+        // setup Feature extraction
+        droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)"));
+        for (Feature f: droolsWrapper.featureExtractor(objectSupplier.get()).keySet()) {
+            droolsWrapper.addFeatureDomain(f.getName(), NumericalFeatureDomain.create(0., ((Number) f.getValue().getUnderlyingObject()).doubleValue()));
+        }
+        PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
+
+        // setup Output extraction
+        droolsWrapper.setExcludedOutputObjects(
+                Stream.of("pallets", "LeftToDistribute", "cost.Product", "cost.OrderLine", "java.lang.Double", "costElements", "Pallet", "City", "Step", "org.drools.core.reteoo.InitialFactImpl", "java.util.ArrayList")
+                        .collect(Collectors.toSet()));
+        droolsWrapper.setExcludedOutputFields(
+                Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
+                        .collect(Collectors.toSet()));
+        droolsWrapper.generateOutputCandidates();
+        droolsWrapper.selectOutputIndecesFromCandidates(List.of(0));
+
+        // wrap model into predictionprovider
+        PredictionProvider wrappedModel = droolsWrapper.wrap();
+        System.out.println("== Original Output ==");
+        for (int i=0; i<100; i++) {
+            wrappedModel.predictAsync(List.of(samplePI)).get().get(0).getOutputs().get(0).getValue();
+        }
+    }
+
+
     // automatically wrap the drools model into a prediction provider + test counterfactual generation
     @Test
     public void testAutoWrapperCF() throws ExecutionException, InterruptedException, TimeoutException {
@@ -129,11 +170,14 @@ public class DroolsIntegrationTests {
         PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
 
         // setup Output extraction
+        droolsWrapper.setExcludedOutputObjects(
+                Stream.of("pallets", "LeftToDistribute", "cost.Product", "cost.OrderLine", "java.lang.Double", "costElements", "Pallet", "City", "Step", "org.drools.core.reteoo.InitialFactImpl", "java.util.ArrayList")
+                        .collect(Collectors.toSet()));
         droolsWrapper.setExcludedOutputFields(
                 Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
                         .collect(Collectors.toSet()));
         droolsWrapper.generateOutputCandidates();
-        droolsWrapper.selectOutputIndecesFromCandidates(List.of(19));
+        droolsWrapper.selectOutputIndecesFromCandidates(List.of(0));
 
         // wrap model into predictionprovider
         PredictionProvider wrappedModel = droolsWrapper.wrap();
@@ -150,57 +194,7 @@ public class DroolsIntegrationTests {
     }
 
     @Test
-    public void testAutoWrapperSHAP() throws ExecutionException, InterruptedException, TimeoutException {
-        // build the function to supply objects into the model
-        Supplier<List<Object>> objectSupplier = () -> {
-            Trip trip = getDefaultTrip();
-            Order order = getDefaultOrder();
-            CostCalculationRequest request = new CostCalculationRequest();
-            request.setTrip(trip);
-            request.setOrder(order);
-            return List.of(request);
-        };
-
-        // initialize the wrapper
-        DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"ksession-rules", objectSupplier);
-
-        // setup Feature extraction
-        droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)"));
-        for (Feature f: droolsWrapper.featureExtractor(objectSupplier.get()).keySet()) {
-            droolsWrapper.addFeatureDomain(f.getName(), NumericalFeatureDomain.create(0., ((Number) f.getValue().getUnderlyingObject()).doubleValue()));
-        }
-        PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
-        List<Feature> backgroundFeatures = new ArrayList<>();
-        for (Feature f : samplePI.getFeatures()){
-            backgroundFeatures.add(FeatureFactory.copyOf(f, new Value(0.0)));
-        }
-        PredictionInput backgroundPI = new PredictionInput(backgroundFeatures);
-
-        // setup Output extraction
-        droolsWrapper.setExcludedOutputFields(
-                Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
-                        .collect(Collectors.toSet()));
-        droolsWrapper.generateOutputCandidates();
-        droolsWrapper.selectOutputIndecesFromCandidates(List.of(19));
-
-        // wrap model into predictionprovider
-        PredictionProvider wrappedModel = droolsWrapper.wrap();
-        System.out.println("== Original Output ==");
-        PredictionOutput samplePO = wrappedModel.predictAsync(List.of(samplePI)).get().get(0);
-        Prediction samplePrediction = new SimplePrediction(samplePI, samplePO);
-
-        // run SHAP
-        ShapConfig config = ShapConfig.builder()
-                .withLink(ShapConfig.LinkType.IDENTITY)
-                .withPC(new PerturbationContext(new Random(0), 0))
-                .withBackground(List.of(backgroundPI))
-                .build();
-        ShapKernelExplainer ske = new ShapKernelExplainer(config);
-        ShapResults results = ske.explainAsync(samplePrediction, wrappedModel).get();
-        System.out.println(results.toString());
-    }
-    @Test
-    public void testAutoWrapperSHAP() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testAutoWrapperSHAP() throws ExecutionException, InterruptedException {
         // build the function to supply objects into the model
         Supplier<List<Object>> objectSupplier = () -> {
             Trip trip = getDefaultTrip();
