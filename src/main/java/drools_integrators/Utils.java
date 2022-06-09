@@ -14,6 +14,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -24,27 +25,6 @@ public class Utils {
  nodes are MERGED when they already exist in the graph for the same rule or contain the same value (in the case of terminal nodes)
  nodes are ADDED otherwise
  */
-    public static GraphNode nodeAdd(Graph<GraphNode, DefaultEdge> graph, Map<Integer, GraphNode> nodeMap, GraphNode n){
-        boolean inGraph = nodeMap.containsKey(n.hashCode());
-        Boolean matchingRuleFlow;
-        Boolean matchingValue;
-        if (inGraph){
-            GraphNode containedNode = nodeMap.get(n.hashCode());
-            matchingRuleFlow = containedNode.getRuleContext().getInputNumber() == n.getRuleContext().getInputNumber();
-            matchingValue = Objects.equals(containedNode.getValue(), n.getValue());
-            // node merge?
-            if (matchingRuleFlow || matchingValue) {
-                containedNode.getCalls()[n.getRuleContext().getInputNumber()] += 1;
-                containedNode.setValue(n.getValue());
-                return containedNode;
-            }
-        }
-        graph.addVertex(n);
-        nodeMap.put(n.hashCode(), n);
-        return n;
-    }
-
-
     // given a map of maps of pairs, add a Pair to the key $key, subkey $subkey
     // creates the map at $key if necessary
     public static <K,S, V> void addToHashOfHashOfPair(Map<K, Map<S, Pair<V,V>>> map, K key, S subkey, Pair<V,V> value) {
@@ -58,8 +38,18 @@ public class Utils {
         map.put(key, subMap);
     }
 
+
+    public static void graphCount(Graph<GraphNode, DefaultEdge> graph){
+        double[] calls = new double[2];
+        for (GraphNode graphNode : graph.vertexSet()){
+            calls[0] += graphNode.getCalls()[0];
+            calls[1] += graphNode.getCalls()[1];
+        }
+        System.out.println(Arrays.toString(calls));
+    }
+
     // print out the Rete graph to GraphViz dotfile, then render as pdf (if dot is installed on the system)
-    public void printGraph(Graph<GraphNode, DefaultEdge> graph){
+    public static void printGraph(Graph<GraphNode, DefaultEdge> graph){
         for (GraphNode g : graph.vertexSet()){
             g.setFinalized(true);
         }

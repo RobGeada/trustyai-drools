@@ -5,7 +5,7 @@ import org.kie.api.definition.rule.Rule;
 
 import java.util.List;
 
-class RuleContext {
+public class RuleContext {
     private final Rule rule;
     private final int eventHashcode;
 

@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 
 import static drools_integrators.BeanReflectors.beanContainers;
 import static drools_integrators.BeanReflectors.beanWriteProperties;
+import static drools_integrators.Utils.graphCount;
+import static drools_integrators.Utils.printGraph;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 public class DroolsWrapper {
@@ -55,6 +57,9 @@ public class DroolsWrapper {
     private Set<String> excludedOutputObjects = new HashSet<>();
     private Set<String> includedOutputFields= new HashSet<>();
     private Set<String> excludedOutputFields= new HashSet<>();
+    public int inputNumber = 0;
+    public Graph<GraphNode, DefaultEdge> graph;
+    public HashMap<Integer, GraphNode> graphNodeMap;
 
 
     public void setIncludedOutputRules(Set<String> includedOutputRules) {
@@ -148,8 +153,8 @@ public class DroolsWrapper {
         KieSession session = this.pool.newKieSession(this.sessionRules);
         InternalWorkingMemory internalWorkingMemory = (InternalWorkingMemory) session;
         Map<String, Value> features = new HashMap<>();
-        Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
-        ParserContext dpc = new ParserContext(internalWorkingMemory, features, graph, new HashSet<>());
+        Graph<GraphNode, DefaultEdge> outputGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        ParserContext dpc = new ParserContext(internalWorkingMemory, features, outputGraph, new HashSet<>());
         RuleFireListener ruleFireListener = new RuleFireListener(
                 includedOutputRules, excludedOutputRules,
                 includedOutputFields, excludedOutputFields,
@@ -204,15 +209,17 @@ public class DroolsWrapper {
         KieSession session = this.pool.newKieSession(this.sessionRules);
         final InternalWorkingMemory internalWorkingMemory = (InternalWorkingMemory) session;
         Map<String, Value> features = new HashMap<>();
-        Graph<GraphNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
-
-        ParserContext dpc = new ParserContext(internalWorkingMemory, features, graph,  new HashSet<>());
+        if (this.inputNumber == 0) {
+            this.graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+            this.graphNodeMap = new HashMap<>();
+        }
+        ParserContext dpc = new ParserContext(internalWorkingMemory, features, this.graph, this.graphNodeMap, new HashSet<>());
         RuleFireListener ruleFireListener = new RuleFireListener(
                 includedOutputRules, excludedOutputRules,
                 includedOutputFields, excludedOutputFields,
                 includedOutputObjects, excludedOutputObjects,
-                dpc, false);
-        ruleFireListener.setInputNumber(0);
+                dpc, true);
+        ruleFireListener.setInputNumber(this.inputNumber);
         ruleFireListener.setOutputTargets(this.outputIndeces.stream()
                 .map(this.outputAccessors::get)
                 .collect(Collectors.toList()));
@@ -221,16 +228,22 @@ public class DroolsWrapper {
         session.startProcess("P1");
         session.fireAllRules();
         session.dispose();
+        this.graphNodeMap = dpc.graphNodeMap;
         System.out.println("Included Objects: "+ruleFireListener.getActualIncludedObjects());
         System.out.println("Included Fields: "+ruleFireListener.getActualIncludedFields());
-        System.out.println("Output: "+new ArrayList<>(ruleFireListener.getDesiredOutputs().values()).get(0).getValue()+"\n");
-        return new PredictionOutput(new ArrayList<>(ruleFireListener.getDesiredOutputs().values()));
+        try {
+            System.out.println("Output: " + new ArrayList<>(ruleFireListener.getDesiredOutputs().values()).get(0).getValue() + "\n");
+            return new PredictionOutput(new ArrayList<>(ruleFireListener.getDesiredOutputs().values()));
+        } catch (IndexOutOfBoundsException e){
+            System.out.println("Output: INVALID");
+            return new PredictionOutput(null);
+        }
     }
 
     public PredictionProvider wrap(){
         return inputs -> supplyAsync(() -> {
             List<Object> droolsInputs = this.inputGenerator.get();
-            System.out.println("Input:  " + inputs.get(0).getFeatures().stream().map(Feature::getValue).collect(Collectors.toList()));
+            System.out.println("Input:  " + inputs.get(0).getFeatures().stream().map(f -> String.format("%s", f.getValue())).collect(Collectors.toList()));
             HashMap<Feature, FeatureWriter> featureWriterMap = featureExtractor(droolsInputs);
             List<PredictionOutput> outputs = new LinkedList<>();
             for (PredictionInput predictionInput : inputs){

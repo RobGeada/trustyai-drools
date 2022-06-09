@@ -1,8 +1,15 @@
 package drools_integrators;
 
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultEdge;
+
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static drools_integrators.Utils.graphCount;
 
 public class GraphNode {
     private final String type;
@@ -34,6 +41,27 @@ public class GraphNode {
         inputNumbers.add(ruleContext.getInputNumber());
         this.value = value;
         this.field = field;
+    }
+
+    public static GraphNode nodeAdd(Graph<GraphNode, DefaultEdge> graph, Map<Integer, GraphNode> nodeMap, GraphNode n){
+        boolean inGraph = nodeMap.containsKey(n.hashCode());
+        Boolean matchingRuleFlow;
+        Boolean matchingValue;
+
+        if (inGraph){
+            GraphNode containedNode = nodeMap.get(n.hashCode());
+            matchingRuleFlow = containedNode.getRuleContext().getInputNumber() == n.getRuleContext().getInputNumber();
+            matchingValue = Objects.equals(containedNode.getValue(), n.getValue());
+            // node merge?
+            if (matchingRuleFlow || matchingValue) {
+                containedNode.getCalls()[n.getRuleContext().getInputNumber()] += 1;
+                containedNode.setValue(n.getValue());
+                return containedNode;
+            }
+        }
+        graph.addVertex(n);
+        nodeMap.put(n.hashCode(), n);
+        return n;
     }
 
     @Override
@@ -68,9 +96,9 @@ public class GraphNode {
     @Override
     public String toString() {
         if (this.value == null) {
-            return String.format("%s%n%d-%d", this.type, this.calls[0], this.calls[1]);
+            return String.format("%s%n%d-%d (%d)", this.type, this.calls[0], this.calls[1], this.hashCode());
         } else {
-            return String.format("%s%n%s=%s", this.type, this.field, this.value);
+            return String.format("%s%n%s=%s (%d)", this.type, this.field, this.value, this.hashCode());
         }
     }
 

@@ -19,21 +19,21 @@ rule "CalculateTotal"
 ruleflow-group "total"
 	when
 	$c : CostCalculationRequest(  )
-	$totalBoatTransport : Number( doubleValue > 100 )
+	$totalBoatTransport : Number( doubleValue > 0 )
              from accumulate( $s : Step(transportType ==Step.Ship_TransportType) &&
                               TransportCostElement(step ==$s, $value : amount  ),
                               init( double total = 0; ),
                               action( total += $value; ),
                               reverse( total -= $value; ),
                               result( total ) )
-	$totalTrainTransport : Number( doubleValue > 100 )
+	$totalTrainTransport : Number( doubleValue > 0 )
             from accumulate( $s : Step(transportType ==Step.train_TransportType) &&
                             TransportCostElement(step ==$s, $value : amount  ),
                              init( double total = 0; ),
                              action( total += $value; ),
                              reverse( total -= $value; ),
                              result( total ) )
-	$totalTruckTransport : Number( doubleValue > 100 )
+	$totalTruckTransport : Number( doubleValue > 0 )
            from accumulate( $s : Step(transportType ==Step.truck_TransportType) &&
                             TransportCostElement(step ==$s, $value : amount  ),
                             init( double total = 0; ),
@@ -43,19 +43,19 @@ ruleflow-group "total"
 	
 	
 	
-	$totalTransport : Number( doubleValue > 100 )
+	$totalTransport : Number( doubleValue > 0 )
              from accumulate(  TransportCostElement( $value : amount  ),
                               init( double total = 0; ),
                               action( total += $value; ),
                               reverse( total -= $value; ),
                               result( total ) )
-    $totalTaxes : Number( doubleValue > 100 )
+    $totalTaxes : Number( doubleValue > 0 )
              from accumulate(  TaxesCostElement( $value : amount  ),
                               init( double total = 0; ),
                               action( total += $value; ),
                               reverse( total -= $value; ),
                               result( total ) )
-     $totalHandling : Number( doubleValue > 100 )
+     $totalHandling : Number( doubleValue > 0 )
              from accumulate(  HandlingCostElement( $value : amount  ),
                               init( double total = 0; ),
                               action( total += $value; ),

@@ -22,8 +22,10 @@ import java.util.function.Predicate;
 
 import static drools_integrators.BeanReflectors.beanProperties;
 import static drools_integrators.ReteTraverser.parseTerminalNode;
+import static drools_integrators.Utils.printGraph;
 
 public class RuleFireListener extends DefaultAgendaEventListener {
+    private Map<String, Map<String, Object>> lifespanHashes = new HashMap<>();
     private Map<String, Map<String, Object>> beforeHashes = new HashMap<>();
     private Map<String, Map<String, Object>> afterHashes = new HashMap<>();
     private Map<Rule, Map<String, Pair<Object, Object>>> differences = new HashMap<>();
@@ -165,7 +167,16 @@ public class RuleFireListener extends DefaultAgendaEventListener {
         if (ruleInclusionCheck(event.getMatch().getRule().getName())) {
             for (InternalFactHandle fh : eventFactHandles) {
                 if (objectInclusionCheck(fh.getObject().getClass().getName())) {
-                    beforeHashes.put(fh.getObject().getClass().getName() + "_" + fh.hashCode(), beanProperties(fh.getObject(), this));
+                    Map<String, Object> objectProperties = beanProperties(fh.getObject(), this);
+                    String key = fh.getObject().getClass().getName() + "_" + fh.hashCode();
+//                    for (String subkey : objectProperties.keySet()) {
+//                        if (! lifespanHashes.containsKey(subkey)) {
+//                            Pair<Object, Object> differenceObject = new Pair<>(null, objectProperties.get(subkey));
+//                            Utils.addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), subkey, differenceObject);
+//                            lifespanHashes.put(subkey, objectProperties);
+//                        }
+//                    }
+                    beforeHashes.put(key, objectProperties);
                 }
             }
         }
@@ -224,25 +235,23 @@ public class RuleFireListener extends DefaultAgendaEventListener {
                 }
             }
 
-            // if we've set an output target, capture it here
-            if (outputTargets != null) {
-                for (Pair<Rule, String> outputTarget : outputTargets) {
-                    if (event.getMatch().getRule() == outputTarget.getFirst()) {
-                        if (differences.get(outputTarget.getFirst()).containsKey(outputTarget.getSecond())) {
-                            this.addDesiredOutput(outputTarget, differences.get(outputTarget.getFirst()).get(outputTarget.getSecond()).getSecond());
-                        } else {
-                            this.addDesiredOutput(outputTarget, null);
-                        }
-                    }
-                }
-            }
-
             if (parseGraph) {
                 RuleContext ruleContext = new RuleContext(event.getMatch().getRule(),
                         event.hashCode(),
                         inputNumber,
                         eventFactHandles);
                 parseTerminalNode((AbstractTerminalNode) ((RuleTerminalNodeLeftTuple) event.getMatch()).getTupleSink(), this, ruleContext, droolsParserContext);
+            }
+
+            // if we've set an output target, capture it here
+            if (outputTargets != null) {
+                for (Pair<Rule, String> outputTarget : outputTargets) {
+                    if (event.getMatch().getRule() == outputTarget.getFirst()) {
+                        if (differences.get(outputTarget.getFirst()).containsKey(outputTarget.getSecond())) {
+                            this.addDesiredOutput(outputTarget, differences.get(outputTarget.getFirst()).get(outputTarget.getSecond()).getSecond());
+                        }
+                    }
+                }
             }
         }
     }

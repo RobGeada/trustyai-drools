@@ -1,5 +1,6 @@
 import cost.*;
 import drools_integrators.DroolsWrapper;
+import drools_integrators.GraphNode;
 import org.junit.Test;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
@@ -30,7 +31,9 @@ import org.optaplanner.core.config.solver.SolverConfig;
 import org.optaplanner.core.config.solver.termination.TerminationConfig;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -39,6 +42,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static drools_integrators.Utils.graphCount;
+import static drools_integrators.Utils.printGraph;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 
 public class DroolsIntegrationTests {
@@ -186,8 +193,8 @@ public class DroolsIntegrationTests {
 
         // run counterfactual
         List<Output> goal = new ArrayList<>();
-        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(2000000.), 0.0d));
-        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .01);
+        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(0.), 0.0d));
+        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .1);
         System.out.println(result.getEntities().stream().map(CounterfactualEntity::asFeature).collect(Collectors.toList()));
         System.out.println(result.isValid());
         System.out.println(result.getOutput().get(0).getOutputs());
@@ -210,22 +217,29 @@ public class DroolsIntegrationTests {
 
         // setup Feature extraction
         droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)"));
-        for (Feature f: droolsWrapper.featureExtractor(objectSupplier.get()).keySet()) {
-            droolsWrapper.addFeatureDomain(f.getName(), NumericalFeatureDomain.create(0., ((Number) f.getValue().getUnderlyingObject()).doubleValue()));
-        }
         PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
         List<Feature> backgroundFeatures = new ArrayList<>();
-        for (Feature f : samplePI.getFeatures()){
-            backgroundFeatures.add(FeatureFactory.copyOf(f, new Value(0.0)));
+        List<Integer> numbers = List.of(1, 1, 1, 1, 1);
+        for (int i=0; i<samplePI.getFeatures().size(); i++){
+            Feature f = samplePI.getFeatures().get(i);
+            if (f.getValue().getUnderlyingObject() instanceof Double){
+                backgroundFeatures.add(FeatureFactory.copyOf(f, new Value((double) numbers.get(i))));
+            } else {
+                backgroundFeatures.add(FeatureFactory.copyOf(f, new Value((numbers.get(i)))));
+            }
         }
         PredictionInput backgroundPI = new PredictionInput(backgroundFeatures);
 
         // setup Output extraction
+        droolsWrapper.setExcludedOutputObjects(
+                Stream.of("pallets", "LeftToDistribute", "cost.Product", "cost.OrderLine", "java.lang.Double",
+                                "costElements", "Pallet", "City", "Step", "org.drools.core.reteoo.InitialFactImpl", "java.util.ArrayList")
+                        .collect(Collectors.toSet()));
         droolsWrapper.setExcludedOutputFields(
                 Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
                         .collect(Collectors.toSet()));
-        droolsWrapper.generateOutputCandidates();
-        droolsWrapper.selectOutputIndecesFromCandidates(List.of(19));
+        droolsWrapper.generateOutputCandidates(true);
+        droolsWrapper.selectOutputIndecesFromCandidates(List.of(0));
 
         // wrap model into predictionprovider
         PredictionProvider wrappedModel = droolsWrapper.wrap();
@@ -238,6 +252,8 @@ public class DroolsIntegrationTests {
                 .withLink(ShapConfig.LinkType.IDENTITY)
                 .withPC(new PerturbationContext(new Random(0), 0))
                 .withBackground(List.of(backgroundPI))
+                .withRegularizer(ShapConfig.RegularizerType.NONE)
+                .withExecutor(newSingleThreadExecutor())
                 .build();
         ShapKernelExplainer ske = new ShapKernelExplainer(config);
         ShapResults results = ske.explainAsync(samplePrediction, wrappedModel).get();

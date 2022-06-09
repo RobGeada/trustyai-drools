@@ -22,18 +22,18 @@ import java.util.Map;
 
 public class ReteTraverser {
     // entry point to graph parser. From a terminal node, walk upwards through parent recursively
-    public static void parseTerminalNode(AbstractTerminalNode terminalNode, RuleFireListener ruleTracker, RuleContext ruleContext, ParserContext dpc){
+    public static void parseTerminalNode(AbstractTerminalNode terminalNode, RuleFireListener ruleFireListener, RuleContext ruleContext, ParserContext dpc){
         RuleTerminalNode node = (RuleTerminalNode) terminalNode;
         dpc.currentTerminals = new ArrayList<>();
-        if (ruleTracker.getDifferences().containsKey(node.getRule())) {
-            for (Map.Entry<String, Pair<Object, Object>> entry : ruleTracker.getDifferences().get(node.getRule()).entrySet()) {
+        if (ruleFireListener.getDifferences().containsKey(node.getRule())) {
+            for (Map.Entry<String, Pair<Object, Object>> entry : ruleFireListener.getDifferences().get(node.getRule()).entrySet()) {
                 GraphNode subGraphNode = new GraphNode(
                         "Terminal: " + node.getRule().getName(),
                         ruleContext,
                         node.getId(),
                         entry.getKey(),
                         entry.getValue().getSecond());
-                GraphNode addedNode = Utils.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
+                GraphNode addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
                 parseLeftTupleSource(node.getLeftTupleSource(), subGraphNode, ruleContext, dpc);
                 dpc.currentTerminals.add(addedNode);
             }
@@ -42,7 +42,7 @@ public class ReteTraverser {
                     "Terminal: " + node.getRule().getName(),
                     ruleContext,
                     node.getId());
-            GraphNode addedNode = Utils.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
+            GraphNode addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
             parseLeftTupleSource(node.getLeftTupleSource(), subGraphNode, ruleContext, dpc);
             dpc.currentTerminals.add(addedNode);
         }
@@ -55,17 +55,17 @@ public class ReteTraverser {
             AlphaNode node = (AlphaNode) objectSource;
             MVELConstraint mvelConstraint = (MVELConstraint) node.getConstraint();
             subGraphNode = new GraphNode("Alpha: "+mvelConstraint.getExpression(), ruleContext, node.getId());
-            addedNode = Utils.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
+            addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
             parseObjectSource(node.getParentObjectSource(), addedNode, ruleContext, dpc);
         } else if (objectSource instanceof RightInputAdapterNode) {
             RightInputAdapterNode node = (RightInputAdapterNode) objectSource;
             subGraphNode = new GraphNode("RightInput: " + node.getLeftTupleSource().getObjectType().getClassName(), ruleContext, node.getId());
-            addedNode = Utils.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
+            addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
             parseLeftTupleSource(node.getLeftTupleSource(), addedNode, ruleContext, dpc);
         } else if (objectSource instanceof EntryPointNode) {
             EntryPointNode node = (EntryPointNode) objectSource;
             subGraphNode = new GraphNode("EntryPoint", ruleContext, node.getId());
-            addedNode = Utils.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
+            addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
             for (GraphNode previousTerminalNode : dpc.previousTerminals){
                 dpc.graph.addEdge(previousTerminalNode, addedNode);
             }
@@ -73,7 +73,7 @@ public class ReteTraverser {
         } else if (objectSource instanceof ObjectTypeNode){
             ObjectTypeNode objectTypeNode = (ObjectTypeNode) objectSource;
             subGraphNode = new GraphNode("ObjectTypeNode: " + objectTypeNode.getObjectType().getClassName(), ruleContext, objectTypeNode.getId());
-            addedNode = Utils.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
+            addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
             parseObjectSource(objectTypeNode.getParentObjectSource(), addedNode, ruleContext, dpc);
         } else {
             System.out.println("ObjectSource other: "+objectSource);
@@ -106,14 +106,14 @@ public class ReteTraverser {
         } else if (leftTupleSinkNode instanceof LeftInputAdapterNode) {
             LeftInputAdapterNode node = (LeftInputAdapterNode) leftTupleSinkNode;
             subGraphNode = new GraphNode("LeftInput: "+ node.getObjectType().getClassName(), ruleContext, node.getId());
-            addedNode = Utils.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
+            addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
             parseObjectSource(node.getObjectSource(), addedNode, ruleContext, dpc);
         } else {
             System.out.println("Left Tuple Source Other:"+ leftTupleSinkNode);
         }
 
         if (betaNode != null && subGraphNode != null) {
-            addedNode = Utils.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
+            addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
             parseObjectSource(betaNode.getRightInput(), addedNode, ruleContext, dpc);
             parseLeftTupleSource(betaNode.getLeftTupleSource(), addedNode, ruleContext, dpc);
         }

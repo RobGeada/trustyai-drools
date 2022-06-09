@@ -1,0 +1,260 @@
+strict digraph G {
+  1052972651 [ label="Terminal: Create Counter leftToDistribute quantity
+3-3 (1052972651)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  1127040904 [ label="Not orderLine == $elt
+5-5 (1127040904)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  1511192046 [ label="ObjectTypeNode: cost.LeftToDistribute
+554-10 (1511192046)" fillcolor="white" color="#FA0004" style="filled" fontcolor="black" shape="oval" ];
+  -305495804 [ label="EntryPoint
+2350-162 (-305495804)" fillcolor="white" color="#EE0010" style="filled" fontcolor="black" shape="oval" ];
+  -1049256426 [ label="LeftInput: cost.OrderLine
+5-5 (-1049256426)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  -1244929522 [ label="Alpha: numberItems > 0
+3-3 (-1244929522)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  1622564432 [ label="ObjectTypeNode: cost.OrderLine
+554-10 (1622564432)" fillcolor="white" color="#FA0004" style="filled" fontcolor="black" shape="oval" ];
+  1531713793 [ label="Terminal: Create Counter leftToDistribute weight
+2-2 (1531713793)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  -923017503 [ label="Alpha: weight > 0.0
+2-2 (-923017503)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  1417163132 [ label="Terminal: Create PalletForIndividual
+500-1 (1417163132)" fillcolor="#FE0000" color="#FE0000" style="filled" fontcolor="white" shape="rectangle" ];
+  -195811897 [ label="Join
+1728-84 (-195811897)" fillcolor="white" color="#F3000B" style="filled" fontcolor="black" shape="oval" ];
+  283608802 [ label="Alpha: quantityLeft > 0
+514-3 (283608802)" fillcolor="white" color="#FD0001" style="filled" fontcolor="black" shape="rectangle" ];
+  1904622996 [ label="Alpha: transportType == Product.transportType_individual
+500-1 (1904622996)" fillcolor="white" color="#FE0000" style="filled" fontcolor="black" shape="rectangle" ];
+  1858209681 [ label="ObjectTypeNode: cost.Product
+550-6 (1858209681)" fillcolor="white" color="#FC0002" style="filled" fontcolor="black" shape="oval" ];
+  1350297708 [ label="LeftInput: cost.CostCalculationRequest
+592-48 (1350297708)" fillcolor="white" color="#EB0013" style="filled" fontcolor="black" shape="oval" ];
+  -1643766251 [ label="ObjectTypeNode: cost.CostCalculationRequest
+592-48 (-1643766251)" fillcolor="white" color="#EB0013" style="filled" fontcolor="black" shape="oval" ];
+  -2108770416 [ label="Terminal: Create PalletForBulkMore1400Kg
+33-0 (-2108770416)" fillcolor="#FF0000" color="#FF0000" style="filled" fontcolor="white" shape="rectangle" ];
+  60442345 [ label="Alpha: weightLeft > 1400.0
+33-0 (60442345)" fillcolor="white" color="#FF0000" style="filled" fontcolor="black" shape="rectangle" ];
+  -1256600272 [ label="Alpha: transportType == Product.transportType_bulkt
+35-2 (-1256600272)" fillcolor="white" color="#F1000D" style="filled" fontcolor="black" shape="rectangle" ];
+  -455300012 [ label="Terminal: Create PalletForBulkless1400Kg
+2-2 (-455300012)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  -1742307656 [ label="Alpha: weightLeft > 0.0
+2-2 (-1742307656)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  1452762541 [ label="Alpha: weightLeft <= 1400.0
+2-2 (1452762541)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  -1785976197 [ label="Terminal: Create Empty Pallet
+1-1 (-1785976197)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  -2064730796 [ label="Not 
+1-1 (-2064730796)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  -112574376 [ label="Alpha: full == false
+15-3 (-112574376)" fillcolor="white" color="#D4002A" style="filled" fontcolor="black" shape="rectangle" ];
+  675348258 [ label="Alpha: palletType == Product.transportType_pallet
+15-3 (675348258)" fillcolor="white" color="#D4002A" style="filled" fontcolor="black" shape="rectangle" ];
+  266195514 [ label="ObjectTypeNode: cost.Pallet
+19-7 (266195514)" fillcolor="white" color="#BA0044" style="filled" fontcolor="black" shape="oval" ];
+  1594399929 [ label="LeftInput: org.drools.core.reteoo.InitialFactImpl
+2-2 (1594399929)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  1282905923 [ label="ObjectTypeNode: org.drools.core.reteoo.InitialFactImpl
+2-2 (1282905923)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  -419901941 [ label="Terminal: Create PalletFortransportType_pallet
+14-2 (-419901941)" fillcolor="#DF001F" color="#DF001F" style="filled" fontcolor="white" shape="rectangle" ];
+  -1970211674 [ label="Alpha: transportType == Product.transportType_pallet
+15-3 (-1970211674)" fillcolor="white" color="#D4002A" style="filled" fontcolor="black" shape="rectangle" ];
+  1258340275 [ label="Terminal: GetSmallestHeight
+1-1 (1258340275)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  1304222044 [ label="Accumulate
+45-45 (1304222044)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  -1553924683 [ label="Terminal: boatTransportCost
+1-1 (-1553924683)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  2057478010 [ label="Alpha: transportType == Step.Ship_TransportType
+17-17 (2057478010)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  -1336698172 [ label="ObjectTypeNode: cost.Step
+31-31 (-1336698172)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  -2125957209 [ label="Terminal: trainTransportCost
+1-1 (-2125957209)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  810990130 [ label="Alpha: transportType == Step.train_TransportType
+9-9 (810990130)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  1290734519 [ label="Terminal: truckTransportCost
+1-1 (1290734519)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  674684781 [ label="Alpha: transportType == Step.truck_TransportType
+5-5 (674684781)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  -856482994 [ label="Terminal: ShangaiTaxesCost_bulk
+1-1 (-856482994)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  701572131 [ label="Alpha: palletType == Product.transportType_bulkt
+2-2 (701572131)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  -2131166068 [ label="Alpha: name == City.ShangaiCityName
+3-3 (-2131166068)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  2075005641 [ label="ObjectTypeNode: cost.City
+8-8 (2075005641)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  -282869251 [ label="Terminal: ShangaiTaxesCost_notbulk
+1-1 (-282869251)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  8853859 [ label="Alpha: palletType != Product.transportType_bulkt
+2-2 (8853859)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  -921191033 [ label="Terminal: RotterdamTaxesCost_bulk_weight
+1-1 (-921191033)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  -90680918 [ label="Alpha: name == City.RotterdamCityName
+3-3 (-90680918)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  1440423703 [ label="Terminal: RotterdamTaxesCost_notbulk_weight
+1-1 (1440423703)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  -1504274670 [ label="Terminal: ShangaiHandlingCost
+1-1 (-1504274670)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  -1176225219 [ label="Terminal: RotterdamHandlingCostAndPersonTaxes
+1-1 (-1176225219)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  1704382346 [ label="Terminal: TournaiHandlingCostAndPersonTaxes
+1-1 (1704382346)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  -1302553743 [ label="Alpha: name == City.TournaiCityName
+1-1 (-1302553743)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  713249979 [ label="Terminal: LilleHandlingCostAndPersonTaxes
+1-1 (713249979)" fillcolor="#7F007F" color="#7F007F" style="filled" fontcolor="white" shape="rectangle" ];
+  1370509986 [ label="Alpha: name == City.LilleCityName
+1-1 (1370509986)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="rectangle" ];
+  424701249 [ label="Terminal: CalculateTotal
+cost.CostCalculationRequest.totalCost=2450221.4 (424701249)" fillcolor="#FF0000" color="#FF0000" style="filled" fontcolor="white" shape="rectangle" ];
+  -1808854506 [ label="ObjectTypeNode: cost.HandlingCostElement
+4-4 (-1808854506)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  2030092580 [ label="ObjectTypeNode: cost.TaxesCostElement
+4-4 (2030092580)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  1943303171 [ label="ObjectTypeNode: cost.TransportCostElement
+32-32 (1943303171)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  -1418357820 [ label="RightInput: cost.TransportCostElement
+28-28 (-1418357820)" fillcolor="white" color="#7F007F" style="filled" fontcolor="black" shape="oval" ];
+  -886442954 [ label="Terminal: CalculateTotal
+cost.CostCalculationRequest.totalTransportCost=2444950.0 (-886442954)" fillcolor="#FF0000" color="#FF0000" style="filled" fontcolor="white" shape="rectangle" ];
+  1105157574 [ label="Terminal: CalculateTotal
+cost.CostCalculationRequest.totalHandlingCost=5004.0 (1105157574)" fillcolor="#FF0000" color="#FF0000" style="filled" fontcolor="white" shape="rectangle" ];
+  -283136968 [ label="Terminal: CalculateTotal
+cost.CostCalculationRequest.totalTaxCost=267.4 (-283136968)" fillcolor="#FF0000" color="#FF0000" style="filled" fontcolor="white" shape="rectangle" ];
+  424702210 [ label="Terminal: CalculateTotal
+cost.CostCalculationRequest.totalCost=16275.36 (424702210)" fillcolor="#0000FF" color="#0000FF" style="filled" fontcolor="white" shape="rectangle" ];
+  -886441993 [ label="Terminal: CalculateTotal
+cost.CostCalculationRequest.totalTransportCost=13710.0 (-886441993)" fillcolor="#0000FF" color="#0000FF" style="filled" fontcolor="white" shape="rectangle" ];
+  1105158535 [ label="Terminal: CalculateTotal
+cost.CostCalculationRequest.totalHandlingCost=2532.0 (1105158535)" fillcolor="#0000FF" color="#0000FF" style="filled" fontcolor="white" shape="rectangle" ];
+  -283136007 [ label="Terminal: CalculateTotal
+cost.CostCalculationRequest.totalTaxCost=33.36 (-283136007)" fillcolor="#0000FF" color="#0000FF" style="filled" fontcolor="white" shape="rectangle" ];
+  -305495804 -> 1511192046;
+  1511192046 -> 1127040904;
+  -305495804 -> 1622564432;
+  1622564432 -> -1244929522;
+  -1244929522 -> -1049256426;
+  -1049256426 -> 1127040904;
+  1127040904 -> 1052972651;
+  1052972651 -> -305495804;
+  1622564432 -> -923017503;
+  -923017503 -> -1049256426;
+  1127040904 -> 1531713793;
+  1531713793 -> -305495804;
+  1511192046 -> 283608802;
+  283608802 -> -195811897;
+  1622564432 -> -195811897;
+  -305495804 -> 1858209681;
+  1858209681 -> 1904622996;
+  1904622996 -> -195811897;
+  -305495804 -> -1643766251;
+  -1643766251 -> 1350297708;
+  1350297708 -> -195811897;
+  -195811897 -> -195811897;
+  -195811897 -> 1417163132;
+  1417163132 -> -305495804;
+  1511192046 -> 60442345;
+  60442345 -> -195811897;
+  1858209681 -> -1256600272;
+  -1256600272 -> -195811897;
+  -195811897 -> -2108770416;
+  -2108770416 -> -305495804;
+  1511192046 -> 1452762541;
+  1452762541 -> -1742307656;
+  -1742307656 -> -195811897;
+  -195811897 -> -455300012;
+  -455300012 -> -305495804;
+  -305495804 -> 266195514;
+  266195514 -> 675348258;
+  675348258 -> -112574376;
+  -112574376 -> -2064730796;
+  -305495804 -> 1282905923;
+  1282905923 -> 1594399929;
+  1594399929 -> -2064730796;
+  -2064730796 -> -1785976197;
+  -1785976197 -> -305495804;
+  1858209681 -> -1970211674;
+  -1970211674 -> -195811897;
+  266195514 -> -112574376;
+  -112574376 -> 675348258;
+  675348258 -> -195811897;
+  -195811897 -> -419901941;
+  -419901941 -> -305495804;
+  -1970211674 -> 1304222044;
+  1594399929 -> 1304222044;
+  1304222044 -> 1258340275;
+  1258340275 -> -305495804;
+  -305495804 -> -1336698172;
+  -1336698172 -> 2057478010;
+  2057478010 -> -195811897;
+  -195811897 -> -1553924683;
+  -1553924683 -> -305495804;
+  -1336698172 -> 810990130;
+  810990130 -> -195811897;
+  -195811897 -> -2125957209;
+  -2125957209 -> -305495804;
+  -1336698172 -> 674684781;
+  674684781 -> -195811897;
+  -195811897 -> 1290734519;
+  1290734519 -> -305495804;
+  266195514 -> 701572131;
+  701572131 -> 1304222044;
+  -305495804 -> 2075005641;
+  2075005641 -> -2131166068;
+  -2131166068 -> -195811897;
+  -195811897 -> 1304222044;
+  1304222044 -> -856482994;
+  -856482994 -> -305495804;
+  266195514 -> 8853859;
+  8853859 -> 1304222044;
+  1304222044 -> -282869251;
+  -282869251 -> -305495804;
+  2075005641 -> -90680918;
+  -90680918 -> -195811897;
+  1304222044 -> -921191033;
+  -921191033 -> -305495804;
+  1304222044 -> 1440423703;
+  1440423703 -> -305495804;
+  -195811897 -> -1504274670;
+  -1504274670 -> -305495804;
+  -195811897 -> -1176225219;
+  -1176225219 -> -305495804;
+  2075005641 -> -1302553743;
+  -1302553743 -> -195811897;
+  -195811897 -> 1704382346;
+  1704382346 -> -305495804;
+  2075005641 -> 1370509986;
+  1370509986 -> -195811897;
+  -195811897 -> 713249979;
+  713249979 -> -305495804;
+  -305495804 -> -1808854506;
+  -1808854506 -> 1304222044;
+  -305495804 -> 2030092580;
+  2030092580 -> 1304222044;
+  -305495804 -> 1943303171;
+  1943303171 -> 1304222044;
+  1943303171 -> -195811897;
+  -195811897 -> -1418357820;
+  -1418357820 -> 1304222044;
+  1350297708 -> 1304222044;
+  1304222044 -> -195811897;
+  1304222044 -> 1304222044;
+  1304222044 -> 424701249;
+  424701249 -> -305495804;
+  1304222044 -> -886442954;
+  -886442954 -> -305495804;
+  1304222044 -> 1105157574;
+  1105157574 -> -305495804;
+  1304222044 -> -283136968;
+  1304222044 -> 424702210;
+  424702210 -> -305495804;
+  1304222044 -> -886441993;
+  -886441993 -> -305495804;
+  1304222044 -> 1105158535;
+  1105158535 -> -305495804;
+  1304222044 -> -283136007;
+}
