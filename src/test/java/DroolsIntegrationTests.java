@@ -214,21 +214,27 @@ public class DroolsIntegrationTests {
 
         // initialize the wrapper
         DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"ksession-rules", objectSupplier);
-
+        droolsWrapper.displayFeatureCandidates();
         // setup Feature extraction
-        droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)"));
+        droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)", "(trip.steps\\[\\d+\\].distance)"));
+        droolsWrapper.displayFeatureCandidates();
         PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
-        List<Feature> backgroundFeatures = new ArrayList<>();
-        List<Integer> numbers = List.of(1, 1, 1, 1, 1);
-        for (int i=0; i<samplePI.getFeatures().size(); i++){
-            Feature f = samplePI.getFeatures().get(i);
-            if (f.getValue().getUnderlyingObject() instanceof Double){
-                backgroundFeatures.add(FeatureFactory.copyOf(f, new Value((double) numbers.get(i))));
-            } else {
-                backgroundFeatures.add(FeatureFactory.copyOf(f, new Value((numbers.get(i)))));
+        List<PredictionInput> background = new ArrayList<>();
+        List<Integer> numbers = List.of(1, 1, 1, 1, 1, 1, 1, 1);
+        Random rn = new Random();
+        Supplier<Double> jitterer = () -> (rn.nextDouble()-.5)/5;
+        for (int i=0; i<10; i++) {
+            List<Feature> backgroundFeatures = new ArrayList<>();
+            for (int j = 0; j < samplePI.getFeatures().size(); j++) {
+                Feature f = samplePI.getFeatures().get(j);
+                if (f.getValue().getUnderlyingObject() instanceof Double) {
+                    backgroundFeatures.add(FeatureFactory.copyOf(f, new Value((double) numbers.get(j) + jitterer.get())));
+                } else {
+                    backgroundFeatures.add(FeatureFactory.copyOf(f, new Value((numbers.get(j) + jitterer.get()))));
+                }
             }
+            background.add(new PredictionInput(backgroundFeatures));
         }
-        PredictionInput backgroundPI = new PredictionInput(backgroundFeatures);
 
         // setup Output extraction
         droolsWrapper.setExcludedOutputObjects(
@@ -247,11 +253,12 @@ public class DroolsIntegrationTests {
         PredictionOutput samplePO = wrappedModel.predictAsync(List.of(samplePI)).get().get(0);
         Prediction samplePrediction = new SimplePrediction(samplePI, samplePO);
 
+
         // run SHAP
         ShapConfig config = ShapConfig.builder()
                 .withLink(ShapConfig.LinkType.IDENTITY)
                 .withPC(new PerturbationContext(new Random(0), 0))
-                .withBackground(List.of(backgroundPI))
+                .withBackground(background)
                 .withRegularizer(ShapConfig.RegularizerType.NONE)
                 .withExecutor(newSingleThreadExecutor())
                 .build();

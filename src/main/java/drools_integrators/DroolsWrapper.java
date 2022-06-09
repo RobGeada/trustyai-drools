@@ -145,6 +145,29 @@ public class DroolsWrapper {
         return fs;
     }
 
+    public void displayFeatureCandidates() {
+        List<String> featureNames = new ArrayList<>(List.of("Feature"));
+        List<String> featureValues = new ArrayList<>(List.of("Value"));
+        Set<Feature> featureSet = featureExtractor(this.inputGenerator.get()).keySet();
+        for (Feature f: featureSet){
+            featureNames.add(f.getName());
+            featureValues.add(f.getValue().toString());
+        }
+
+        int largestName = featureNames.stream().mapToInt(String::length).max().getAsInt()+1;
+        int largestValue = featureValues.stream().mapToInt(String::length).max().getAsInt()+1;
+        String fmtStr = String.format("%%%ds | %%%ds%n", largestName, largestValue);
+        System.out.println("=== FEATURE CANDIDATES "+
+                StringUtils.repeat("=",Math.max(0, largestName+largestValue - 15)));
+        System.out.printf(fmtStr, featureNames.get(0), featureValues.get(0));
+        System.out.println(StringUtils.repeat("-",largestName+largestValue+ 6));
+        for (int i=1; i<featureNames.size(); i++){
+            System.out.printf(fmtStr, featureNames.get(i), featureValues.get(i));
+        }
+        System.out.println(StringUtils.repeat("=",  largestName+largestValue + 6));
+    }
+
+
     // generate the output candidate accessor dictionary, but do not print it out
     public void generateOutputCandidates() { generateOutputCandidates(false); }
 
@@ -242,11 +265,11 @@ public class DroolsWrapper {
 
     public PredictionProvider wrap(){
         return inputs -> supplyAsync(() -> {
-            List<Object> droolsInputs = this.inputGenerator.get();
-            System.out.println("Input:  " + inputs.get(0).getFeatures().stream().map(f -> String.format("%s", f.getValue())).collect(Collectors.toList()));
-            HashMap<Feature, FeatureWriter> featureWriterMap = featureExtractor(droolsInputs);
             List<PredictionOutput> outputs = new LinkedList<>();
             for (PredictionInput predictionInput : inputs){
+                List<Object> droolsInputs = this.inputGenerator.get();
+                HashMap<Feature, FeatureWriter> featureWriterMap = featureExtractor(droolsInputs);
+                System.out.println("Input:  " + predictionInput.getFeatures().stream().map(f -> String.format("%s", f.getValue())).collect(Collectors.toList()));
                 for (Feature f : predictionInput.getFeatures()){
                     for (Map.Entry<Feature, FeatureWriter> writerContainerEntry : featureWriterMap.entrySet()){
                         if (f.getName().equals(writerContainerEntry.getKey().getName())){
