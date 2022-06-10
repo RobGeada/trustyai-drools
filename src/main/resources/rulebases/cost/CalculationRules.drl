@@ -1,20 +1,25 @@
 
-package rules
+package rulebases.cost
 
-import cost.OrderLine;
-import cost.LeftToDistribute;
-import cost.Product;
-import cost.Pallet;
-import cost.CostCalculationRequest;
-import cost.CalculatedElement;
-import cost.HandlingCostElement;
-import cost.TaxesCostElement;
-import cost.TransportCostElement;
-import cost.Step;
-import cost.City;
+import rulebases.cost.OrderLine;
+import rulebases.cost.LeftToDistribute;
+import rulebases.cost.Product;
+import rulebases.cost.Pallet;
+import rulebases.cost.CostCalculationRequest;
+import rulebases.cost.CalculatedElement;
+import rulebases.cost.HandlingCostElement;
+import rulebases.cost.TaxesCostElement;
+import rulebases.cost.TransportCostElement;
+import rulebases.cost.Step;
+import rulebases.cost.City;
 
 import java.lang.Math;
-import java.util.ArrayList;
+import java.util.ArrayList
+import rulebases.cost.Product
+import rulebases.cost.HandlingCostElement
+import rulebases.cost.TaxesCostElement
+import rulebases.cost.TransportCostElement
+import rulebases.cost.Pallet;
 
 rule "boatTransportCost"
 	ruleflow-group "calculate"
@@ -22,7 +27,7 @@ rule "boatTransportCost"
   		$c : CostCalculationRequest(  )
   		$s : Step(transportType ==Step.Ship_TransportType)	
     then
-  		TransportCostElement t = new TransportCostElement(); 		
+  		TransportCostElement t = new TransportCostElement();
   		t.setStep($s);
   		t.setAmount($c.getPallets().size()*$s.getDistance()*0.2);
   		$c.getCostElements().add(t);

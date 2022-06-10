@@ -22,13 +22,13 @@ import java.util.function.Predicate;
 
 import static drools_integrators.BeanReflectors.beanProperties;
 import static drools_integrators.ReteTraverser.parseTerminalNode;
-import static drools_integrators.Utils.printGraph;
 
 public class RuleFireListener extends DefaultAgendaEventListener {
-    private Map<String, Map<String, Object>> lifespanHashes = new HashMap<>();
+    private Set<String> lifespanHashes = new HashSet<>();
     private Map<String, Map<String, Object>> beforeHashes = new HashMap<>();
     private Map<String, Map<String, Object>> afterHashes = new HashMap<>();
-    private Map<Rule, Map<String, Pair<Object, Object>>> differences = new HashMap<>();
+
+    private Map<OutputAccessor, OutputCandidate> differences = new HashMap<>();
 
     private Set<String> excludedRules = new HashSet<>();
     private Set<String> includedRules = new HashSet<>();
@@ -45,11 +45,11 @@ public class RuleFireListener extends DefaultAgendaEventListener {
 
     private final ParserContext droolsParserContext;
     private int inputNumber = 0;
-    private List<Pair<Rule, String>> outputTargets;
-    private HashMap<Pair<Rule, String>, Output> desiredOutputs = new HashMap<>();
+    private List<OutputAccessor> outputAccessors;
+    private HashMap<OutputAccessor, Output> desiredOutputs = new HashMap<>();
     private final boolean parseGraph;
 
-    public Map<Rule, Map<String, Pair<Object, Object>>> getDifferences() {
+    public Map<OutputAccessor, OutputCandidate> getDifferences() {
         return differences;
     }
 
@@ -87,7 +87,7 @@ public class RuleFireListener extends DefaultAgendaEventListener {
 
     public Set<String> getActualExcludedFields() {return actualExcludedFields;}
 
-    public HashMap<Pair<Rule, String>, Output> getDesiredOutputs() {
+    public HashMap<OutputAccessor, Output> getDesiredOutputs() {
         return desiredOutputs;
     }
 
@@ -112,19 +112,19 @@ public class RuleFireListener extends DefaultAgendaEventListener {
     }
 
     // how do access the object that is our desired output?
-    public void setOutputTargets(List<Pair<Rule, String>> outputTargets) {
-        this.outputTargets = outputTargets;
+    public void setOutputTargets(List<OutputAccessor> outputAccessors) {
+        this.outputAccessors = outputAccessors;
     }
 
     // set desired output as a TrustyAI Object
-    public void addDesiredOutput(Pair<Rule, String> outputTarget, Object o) {
-        String name = outputTarget.getFirst().getName() + ": " + outputTarget.getSecond();
+    public void addDesiredOutput(OutputAccessor outputAccessor, Object o) {
+        String name = outputAccessor.rule.getName() + ": " + outputAccessor.name;
         if (o instanceof Number) {
-            desiredOutputs.put(outputTarget, new Output(name, Type.NUMBER, new Value(((Number) o).doubleValue()), 1.0));
+            desiredOutputs.put(outputAccessor, new Output(name, Type.NUMBER, new Value(((Number) o).doubleValue()), 1.0));
         } else if (o instanceof Boolean) {
-            desiredOutputs.put(outputTarget, new Output(name, Type.BOOLEAN, new Value(o), 1.0));
+            desiredOutputs.put(outputAccessor, new Output(name, Type.BOOLEAN, new Value(o), 1.0));
         } else if (o instanceof String) {
-            desiredOutputs.put(outputTarget, new Output(name, Type.CATEGORICAL, new Value(o), 1.0));
+            desiredOutputs.put(outputAccessor, new Output(name, Type.CATEGORICAL, new Value(o), 1.0));
         }
     }
 
@@ -159,6 +159,7 @@ public class RuleFireListener extends DefaultAgendaEventListener {
         return generalInclusionCheck(fieldName, includedOutputFields, excludedOutputFields, actualIncludedFields, actualExcludedFields, true);
     }
 
+
     // before a rule fires, catalog every object associated with the rule
     @Override
     public void beforeMatchFired(BeforeMatchFiredEvent event) {
@@ -169,18 +170,62 @@ public class RuleFireListener extends DefaultAgendaEventListener {
                 if (objectInclusionCheck(fh.getObject().getClass().getName())) {
                     Map<String, Object> objectProperties = beanProperties(fh.getObject(), this);
                     String key = fh.getObject().getClass().getName() + "_" + fh.hashCode();
-//                    for (String subkey : objectProperties.keySet()) {
-//                        if (! lifespanHashes.containsKey(subkey)) {
-//                            Pair<Object, Object> differenceObject = new Pair<>(null, objectProperties.get(subkey));
-//                            Utils.addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), subkey, differenceObject);
-//                            lifespanHashes.put(subkey, objectProperties);
-//                        }
-//                    }
                     beforeHashes.put(key, objectProperties);
                 }
             }
         }
     }
+
+    public void checkDifferences(AfterMatchFiredEvent event){
+        Set<String> keySets = new HashSet<>(afterHashes.keySet());
+        keySets.addAll(beforeHashes.keySet());
+        for (String key : new ArrayList<>(keySets)) {
+            OutputAccessor outputAccessor = new OutputAccessor(event.getMatch().getRule(), key);
+            if (!beforeHashes.containsKey(key)) {
+                OutputCandidate differenceObject = new OutputCandidate(null, afterHashes.get(key));
+                this.differences.put(outputAccessor, differenceObject);
+            }
+            if (!afterHashes.containsKey(key)) {
+                OutputCandidate differenceObject = new OutputCandidate(beforeHashes.get(key), null);
+                this.differences.put(outputAccessor, differenceObject);
+            }
+            if (beforeHashes.containsKey(key) && afterHashes.containsKey(key)) {
+                if (!lifespanHashes.contains(key)){
+                    OutputCandidate differenceObject = new OutputCandidate(null, "Created", true);
+                    outputAccessor.setObjectExistence(true);
+                    this.differences.put(outputAccessor, differenceObject);
+                } else {
+                    Map<String, Object> afterValues = afterHashes.get(key);
+                    Map<String, Object> beforeValues = beforeHashes.get(key);
+
+                    Set<String> objectKeySets = new HashSet<>(afterValues.keySet());
+                    objectKeySets.addAll(new ArrayList<>(beforeValues.keySet()));
+
+                    for (String objectKey : objectKeySets) {
+                        outputAccessor = new OutputAccessor(event.getMatch().getRule(), objectKey);
+                        if (!beforeValues.containsKey(objectKey)) {
+                            OutputCandidate differenceObject = new OutputCandidate(null, afterValues.get(objectKey));
+                            this.differences.put(outputAccessor, differenceObject);
+                        }
+                        if (!afterValues.containsKey(objectKey)) {
+                            OutputCandidate differenceObject = new OutputCandidate(beforeValues.get(objectKey), null);
+                            this.differences.put(outputAccessor, differenceObject);
+                        }
+                        if (beforeValues.containsKey(objectKey) && afterValues.containsKey(objectKey)) {
+                            if (!beforeValues.get(objectKey).equals(afterValues.get(objectKey))) {
+                                OutputCandidate differenceObject = new OutputCandidate(beforeValues.get(objectKey), afterValues.get(objectKey));
+                                this.differences.put(outputAccessor, differenceObject);
+                            }
+                        }
+                    }
+                }
+                lifespanHashes.add(key);
+                beforeHashes.remove(key);
+                afterHashes.remove(key);
+            }
+        }
+    }
+
 
     // after the rule fires, catalog every object associated with the rule
     // then, see what has changed
@@ -195,45 +240,7 @@ public class RuleFireListener extends DefaultAgendaEventListener {
                 }
             }
 
-            Set<String> keySets = new HashSet<>(afterHashes.keySet());
-            keySets.addAll(beforeHashes.keySet());
-
-            for (String key : new ArrayList<>(keySets)) {
-                if (!beforeHashes.containsKey(key)) {
-                    Pair<Object, Object> differenceObject = new Pair<>(null, afterHashes.get(key));
-                    Utils.addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), key, differenceObject);
-                }
-                if (!afterHashes.containsKey(key)) {
-                    Pair<Object, Object> differenceObject = new Pair<>(beforeHashes.get(key), null);
-                    Utils.addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), key, differenceObject);
-                }
-                if (beforeHashes.containsKey(key) && afterHashes.containsKey(key)) {
-                    Map<String, Object> afterValues = afterHashes.get(key);
-                    Map<String, Object> beforeValues = beforeHashes.get(key);
-
-                    Set<String> objectKeySets = new HashSet<>(afterValues.keySet());
-                    objectKeySets.addAll(new ArrayList<>(beforeValues.keySet()));
-
-                    for (String objectKey : objectKeySets) {
-                        if (!beforeValues.containsKey(objectKey)) {
-                            Pair<Object, Object> differenceObject = new Pair<>(null, afterValues.get(objectKey));
-                            Utils.addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
-                        }
-                        if (!afterValues.containsKey(objectKey)) {
-                            Pair<Object, Object> differenceObject = new Pair<>(beforeValues.get(objectKey), null);
-                            Utils.addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
-                        }
-                        if (beforeValues.containsKey(objectKey) && afterValues.containsKey(objectKey)) {
-                            if (!beforeValues.get(objectKey).equals(afterValues.get(objectKey))) {
-                                Pair<Object, Object> differenceObject = new Pair<>(beforeValues.get(objectKey), afterValues.get(objectKey));
-                                Utils.addToHashOfHashOfPair(this.differences, event.getMatch().getRule(), objectKey, differenceObject);
-                            }
-                        }
-                        beforeHashes.remove(key);
-                        afterHashes.remove(key);
-                    }
-                }
-            }
+            checkDifferences(event);
 
             if (parseGraph) {
                 RuleContext ruleContext = new RuleContext(event.getMatch().getRule(),
@@ -244,11 +251,14 @@ public class RuleFireListener extends DefaultAgendaEventListener {
             }
 
             // if we've set an output target, capture it here
-            if (outputTargets != null) {
-                for (Pair<Rule, String> outputTarget : outputTargets) {
-                    if (event.getMatch().getRule() == outputTarget.getFirst()) {
-                        if (differences.get(outputTarget.getFirst()).containsKey(outputTarget.getSecond())) {
-                            this.addDesiredOutput(outputTarget, differences.get(outputTarget.getFirst()).get(outputTarget.getSecond()).getSecond());
+            if (outputAccessors != null) {
+                for (OutputAccessor outputAccessor : outputAccessors) {
+                    if (outputAccessor.objectExistence && !desiredOutputs.containsKey(outputAccessor)){
+                        this.addDesiredOutput(outputAccessor, "Not Created");
+                    }
+                    if (event.getMatch().getRule() == outputAccessor.rule) {
+                        if (differences.containsKey(outputAccessor)){
+                            this.addDesiredOutput(outputAccessor, differences.get(outputAccessor).after);
                         }
                     }
                 }

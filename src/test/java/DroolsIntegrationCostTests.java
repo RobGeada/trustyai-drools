@@ -1,6 +1,4 @@
-import cost.*;
 import drools_integrators.DroolsWrapper;
-import drools_integrators.GraphNode;
 import org.junit.Test;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
@@ -8,7 +6,6 @@ import org.kie.kogito.explainability.local.counterfactual.CounterfactualConfig;
 import org.kie.kogito.explainability.local.counterfactual.CounterfactualExplainer;
 import org.kie.kogito.explainability.local.counterfactual.CounterfactualResult;
 import org.kie.kogito.explainability.local.counterfactual.SolverConfigBuilder;
-import org.kie.kogito.explainability.local.counterfactual.entities.CounterfactualEntity;
 import org.kie.kogito.explainability.local.counterfactual.entities.CounterfactualEntity;
 import org.kie.kogito.explainability.local.shap.ShapConfig;
 import org.kie.kogito.explainability.local.shap.ShapKernelExplainer;
@@ -29,11 +26,16 @@ import org.kie.kogito.explainability.model.domain.NumericalFeatureDomain;
 import org.optaplanner.core.config.solver.EnvironmentMode;
 import org.optaplanner.core.config.solver.SolverConfig;
 import org.optaplanner.core.config.solver.termination.TerminationConfig;
+import rulebases.cost.City;
+import rulebases.cost.CostCalculationRequest;
+import rulebases.cost.Order;
+import rulebases.cost.OrderLine;
+import rulebases.cost.Product;
+import rulebases.cost.Step;
+import rulebases.cost.Trip;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -43,12 +45,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static drools_integrators.Utils.graphCount;
-import static drools_integrators.Utils.printGraph;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 
-public class DroolsIntegrationTests {
+public class DroolsIntegrationCostTests {
     KieServices ks = KieServices.Factory.get();
     KieContainer kieContainer = ks.getKieClasspathContainer();
 
@@ -125,7 +125,7 @@ public class DroolsIntegrationTests {
         };
 
         // initialize the wrapper
-        DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"ksession-rules", objectSupplier);
+        DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"CostRulesKS", objectSupplier, "P1");
 
         // setup Feature extraction
         droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)"));
@@ -141,13 +141,13 @@ public class DroolsIntegrationTests {
         droolsWrapper.setExcludedOutputFields(
                 Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
                         .collect(Collectors.toSet()));
-        droolsWrapper.generateOutputCandidates();
+        droolsWrapper.generateOutputCandidates(true);
         droolsWrapper.selectOutputIndecesFromCandidates(List.of(0));
 
         // wrap model into predictionprovider
         PredictionProvider wrappedModel = droolsWrapper.wrap();
         System.out.println("== Original Output ==");
-        for (int i=0; i<100; i++) {
+        for (int i=0; i<2; i++) {
             wrappedModel.predictAsync(List.of(samplePI)).get().get(0).getOutputs().get(0).getValue();
         }
     }
@@ -167,7 +167,7 @@ public class DroolsIntegrationTests {
         };
 
         // initialize the wrapper
-        DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"ksession-rules", objectSupplier);
+        DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"CostRulesKS", objectSupplier, "P1");
 
         // setup Feature extraction
         droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)"));
@@ -213,7 +213,7 @@ public class DroolsIntegrationTests {
         };
 
         // initialize the wrapper
-        DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"ksession-rules", objectSupplier);
+        DroolsWrapper droolsWrapper = new DroolsWrapper(kieContainer,"CostRulesKS", objectSupplier, "P1");
         droolsWrapper.displayFeatureCandidates();
         // setup Feature extraction
         droolsWrapper.setFeatureExtractorFilters(List.of("(orderLines\\[\\d+\\].weight)", "(orderLines\\[\\d+\\].numberItems)", "(trip.steps\\[\\d+\\].distance)"));
@@ -223,7 +223,7 @@ public class DroolsIntegrationTests {
         List<Integer> numbers = List.of(1, 1, 1, 1, 1, 1, 1, 1);
         Random rn = new Random();
         Supplier<Double> jitterer = () -> (rn.nextDouble()-.5)/5;
-        for (int i=0; i<10; i++) {
+        for (int i=0; i<1; i++) {
             List<Feature> backgroundFeatures = new ArrayList<>();
             for (int j = 0; j < samplePI.getFeatures().size(); j++) {
                 Feature f = samplePI.getFeatures().get(j);

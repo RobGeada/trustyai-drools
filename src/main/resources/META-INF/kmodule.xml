@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kmodule xmlns="http://www.drools.org/xsd/kmodule">
-    <kbase name="rules" packages="rules">
-        <ksession name="ksession-rules"/>
+    <kbase name="CostRulesKB" packages="rulebases.cost">
+        <ksession name="CostRulesKS"/>
     </kbase>
-
+    <kbase name="BussPassGoodKB" packages="rulebases.buspass.good">
+        <ksession name="BussPassGoodKS"/>
+    </kbase>
+    <kbase name="BussPassBadKB" packages="rulebases.buspass.bad">
+        <ksession name="BussPassBadKS"/>
+    </kbase>
+    <kbase name="BussPassJTMSKB" packages="rulebases.buspass.jtms">
+        <ksession name="BussPassJTMSKS" beliefSystem="jtms"/>
+    </kbase>
 </kmodule>

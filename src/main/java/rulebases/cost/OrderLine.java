@@ -1,4 +1,4 @@
-package cost;
+package rulebases.cost;
 
 public class OrderLine {
     private Integer numberItems;

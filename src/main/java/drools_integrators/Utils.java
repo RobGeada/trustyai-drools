@@ -14,28 +14,25 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class Utils {
-    /* function to add/merge nodes as necessary
- nodes are MERGED when they already exist in the graph for the same rule or contain the same value (in the case of terminal nodes)
- nodes are ADDED otherwise
- */
-    // given a map of maps of pairs, add a Pair to the key $key, subkey $subkey
-    // creates the map at $key if necessary
-    public static <K,S, V> void addToHashOfHashOfPair(Map<K, Map<S, Pair<V,V>>> map, K key, S subkey, Pair<V,V> value) {
-        Map<S, Pair<V,V>> subMap = map.containsKey(key) ? map.get(key) : new HashMap<>();
-        if (subMap.containsKey(subkey)){
-            Pair<V, V> transitiveObject = new Pair<>(subMap.get(subkey).getFirst(), value.getSecond());
-            subMap.put(subkey, transitiveObject);
-        } else {
-            subMap.put(subkey, value);
+    // given a map of key and pairs, return the submap of all key,value pairs that satisfy some function f(key)
+    public static <K, V> Map<K, V> getMapSlice(Map<K, V> map, Predicate<K> predicate) {
+        Map<K, V> output = new HashMap<>();
+        for (Map.Entry<K, V> entry : map.entrySet()){
+            if (predicate.test(entry.getKey())){
+                output.put(entry.getKey(), entry.getValue());
+            }
         }
-        map.put(key, subMap);
+        return output;
     }
 
 

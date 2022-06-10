@@ -1,4 +1,4 @@
-package cost;
+package rulebases.cost;
 
 public class Product {
 

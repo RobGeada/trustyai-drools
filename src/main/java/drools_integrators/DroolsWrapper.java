@@ -42,10 +42,12 @@ public class DroolsWrapper {
     private List<String> featureWriterFilters;
     private List<Pattern> featureWriterRegexs;
 
+    private final String bpmn;
+
     private Map<String, FeatureDomain> featureDomainMap = new HashMap<>();
 
     private Supplier<List<Object>> inputGenerator;
-    private List<Pair<Rule, String>> outputAccessors;
+    private List<OutputAccessor> outputAccessors;
 
     private List<Integer>outputIndeces;
 
@@ -86,11 +88,18 @@ public class DroolsWrapper {
         this.excludedOutputObjects = excludedOutputObjects;
     }
 
-
     public DroolsWrapper(KieContainer kieContainer, String sessionRules, Supplier<List<Object>> inputGenerator) {
         this.inputGenerator = inputGenerator;
         this.sessionRules = sessionRules;
         this.pool = kieContainer.newKieSessionsPool(100);
+        this.bpmn = null;
+    }
+
+    public DroolsWrapper(KieContainer kieContainer, String sessionRules, Supplier<List<Object>> inputGenerator, String bpmn) {
+        this.inputGenerator = inputGenerator;
+        this.sessionRules = sessionRules;
+        this.pool = kieContainer.newKieSessionsPool(100);
+        this.bpmn = bpmn;
     }
 
     public void setFeatureExtractorFilters(List<String> filters) {
@@ -183,9 +192,13 @@ public class DroolsWrapper {
                 includedOutputFields, excludedOutputFields,
                 includedOutputObjects, excludedOutputObjects,
                 dpc, false);
+
+
         session.addEventListener(ruleFireListener);
         recursiveInsert(session, this.inputGenerator.get());
-        session.startProcess("P1");
+        if (this.bpmn != null) {
+            session.startProcess(bpmn);
+        }
         session.fireAllRules();
         session.dispose();
 
@@ -195,16 +208,13 @@ public class DroolsWrapper {
         List<String> fieldNames = new ArrayList<>(List.of("Field Name"));
         List<String> finalValues = new ArrayList<>(List.of("Final Value"));
 
-        for (Map.Entry<Rule, Map<String, Pair<Object, Object>>> entry : ruleFireListener.getDifferences().entrySet()) {
-            for (Map.Entry<String, Pair<Object, Object>> subEntry : entry.getValue().entrySet()) {
-                indeces.add(Integer.toString(outputIDX));
-                fieldNames.add(subEntry.getKey());
-                finalValues.add(subEntry.getValue().getSecond().toString());
-                this.outputAccessors.add(new Pair<>(entry.getKey(), subEntry.getKey()));
-                outputIDX += 1;
-            }
+        for (Map.Entry<OutputAccessor, OutputCandidate> outputAccessorOutputCandidate : ruleFireListener.getDifferences().entrySet()) {
+            indeces.add(Integer.toString(outputIDX));
+            fieldNames.add(outputAccessorOutputCandidate.getKey().name);
+            finalValues.add(outputAccessorOutputCandidate.getValue().after.toString());
+            this.outputAccessors.add(outputAccessorOutputCandidate.getKey());
+            outputIDX += 1;
         }
-
 
         if (display){
             int largestInt = indeces.stream().mapToInt(String::length).max().getAsInt()+1;
@@ -248,7 +258,9 @@ public class DroolsWrapper {
                 .collect(Collectors.toList()));
         session.addEventListener(ruleFireListener);
         recursiveInsert(session, droolsInputs);
-        session.startProcess("P1");
+        if (this.bpmn != null) {
+            session.startProcess("P1");
+        }
         session.fireAllRules();
         session.dispose();
         this.graphNodeMap = dpc.graphNodeMap;

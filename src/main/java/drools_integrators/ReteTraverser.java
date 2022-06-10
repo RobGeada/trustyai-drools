@@ -18,6 +18,8 @@ import org.drools.core.spi.BetaNodeFieldConstraint;
 import org.drools.mvel.MVELConstraint;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ReteTraverser {
@@ -25,14 +27,15 @@ public class ReteTraverser {
     public static void parseTerminalNode(AbstractTerminalNode terminalNode, RuleFireListener ruleFireListener, RuleContext ruleContext, ParserContext dpc){
         RuleTerminalNode node = (RuleTerminalNode) terminalNode;
         dpc.currentTerminals = new ArrayList<>();
-        if (ruleFireListener.getDifferences().containsKey(node.getRule())) {
-            for (Map.Entry<String, Pair<Object, Object>> entry : ruleFireListener.getDifferences().get(node.getRule()).entrySet()) {
+        Map<OutputAccessor, OutputCandidate> differencesThisRule = Utils.getMapSlice(ruleFireListener.getDifferences(), outputAccessor -> outputAccessor.rule.equals(node.getRule()));
+        if (differencesThisRule.size() > 0) {
+            for (Map.Entry<OutputAccessor, OutputCandidate> entry : differencesThisRule.entrySet()) {
                 GraphNode subGraphNode = new GraphNode(
                         "Terminal: " + node.getRule().getName(),
                         ruleContext,
                         node.getId(),
-                        entry.getKey(),
-                        entry.getValue().getSecond());
+                        entry.getKey().name,
+                        entry.getValue().after);
                 GraphNode addedNode = GraphNode.nodeAdd(dpc.graph, dpc.graphNodeMap, subGraphNode);
                 parseLeftTupleSource(node.getLeftTupleSource(), subGraphNode, ruleContext, dpc);
                 dpc.currentTerminals.add(addedNode);

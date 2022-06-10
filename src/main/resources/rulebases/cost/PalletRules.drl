@@ -1,12 +1,16 @@
-package rules
+package rulebases.cost
  
-import cost.OrderLine;
-import cost.LeftToDistribute;
-import cost.Product;
-import cost.Pallet;
-import cost.CostCalculationRequest;
-import cost.CalculatedElement;
-import java.lang.Math;
+import rulebases.cost.OrderLine;
+import rulebases.cost.LeftToDistribute;
+import rulebases.cost.Product;
+import rulebases.cost.Pallet;
+import rulebases.cost.CostCalculationRequest;
+import rulebases.cost.CalculatedElement;
+import java.lang.Math
+import rulebases.cost.Product
+import rulebases.cost.LeftToDistribute
+import rulebases.cost.CalculatedElement
+import rulebases.cost.Pallet;
 
 
 rule "Create Counter leftToDistribute quantity"

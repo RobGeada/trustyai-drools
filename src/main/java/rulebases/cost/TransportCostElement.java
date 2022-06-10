@@ -1,4 +1,4 @@
-package cost;
+package rulebases.cost;
 
 public class TransportCostElement implements CostElement {
     private double amount;

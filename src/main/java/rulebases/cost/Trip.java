@@ -1,4 +1,4 @@
-package cost;
+package rulebases.cost;
 
 import java.util.ArrayList;
 import java.util.List;
