@@ -12,4 +12,7 @@
     <kbase name="BussPassJTMSKB" packages="rulebases.buspass.jtms">
         <ksession name="BussPassJTMSKS" beliefSystem="jtms"/>
     </kbase>
+    <kbase name="CashFlowKB" packages="rulebases.cashflow">
+        <ksession name="CashFlowKS"/>
+    </kbase>
 </kmodule>

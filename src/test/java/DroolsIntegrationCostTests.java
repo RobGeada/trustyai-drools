@@ -35,6 +35,7 @@ import rulebases.cost.Step;
 import rulebases.cost.Trip;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -177,14 +178,11 @@ public class DroolsIntegrationCostTests {
         PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
 
         // setup Output extraction
-        droolsWrapper.setExcludedOutputObjects(
-                Stream.of("pallets", "LeftToDistribute", "cost.Product", "cost.OrderLine", "java.lang.Double", "costElements", "Pallet", "City", "Step", "org.drools.core.reteoo.InitialFactImpl", "java.util.ArrayList")
-                        .collect(Collectors.toSet()));
-        droolsWrapper.setExcludedOutputFields(
-                Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
-                        .collect(Collectors.toSet()));
-        droolsWrapper.generateOutputCandidates();
-        droolsWrapper.selectOutputIndecesFromCandidates(List.of(0));
+        droolsWrapper.setExcludedOutputObjects(List.of("pallets", "LeftToDistribute", "cost.Product", "cost.OrderLine", "java.lang.Double", "costElements", "Pallet", "City", "Step", "org.drools.core.reteoo.InitialFactImpl", "java.util.ArrayList"));
+        droolsWrapper.setExcludedOutputFields(List.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step"));
+        droolsWrapper.setIncludedOutputRules(List.of("CalculateTotal"));
+        droolsWrapper.generateOutputCandidates(true);
+        droolsWrapper.selectOutputIndecesFromCandidates(List.of(3));
 
         // wrap model into predictionprovider
         PredictionProvider wrappedModel = droolsWrapper.wrap();
@@ -193,7 +191,7 @@ public class DroolsIntegrationCostTests {
 
         // run counterfactual
         List<Output> goal = new ArrayList<>();
-        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(0.), 0.0d));
+        goal.add(new Output("CalculateTotal: cost.CostCalculationRequest.totalCost", Type.NUMBER, new Value(1000000.), 0.0d));
         CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .1);
         System.out.println(result.getEntities().stream().map(CounterfactualEntity::asFeature).collect(Collectors.toList()));
         System.out.println(result.isValid());
@@ -238,12 +236,12 @@ public class DroolsIntegrationCostTests {
 
         // setup Output extraction
         droolsWrapper.setExcludedOutputObjects(
-                Stream.of("pallets", "LeftToDistribute", "cost.Product", "cost.OrderLine", "java.lang.Double",
-                                "costElements", "Pallet", "City", "Step", "org.drools.core.reteoo.InitialFactImpl", "java.util.ArrayList")
-                        .collect(Collectors.toSet()));
+                List.of("pallets", "LeftToDistribute", "cost.Product", "cost.OrderLine", "java.lang.Double",
+                                "costElements", "Pallet", "City", "Step", "org.drools.core.reteoo.InitialFactImpl", "java.util.ArrayList"));
         droolsWrapper.setExcludedOutputFields(
-                Stream.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step")
-                        .collect(Collectors.toSet()));
+                List.of("pallets", "order", "trip", "step", "distance", "transportType", "city", "Step"));
+        droolsWrapper.setIncludedOutputRules(List.of("CalculateTotal"));
+
         droolsWrapper.generateOutputCandidates(true);
         droolsWrapper.selectOutputIndecesFromCandidates(List.of(0));
 

@@ -21,7 +21,7 @@ public class OutputAccessor {
 
     @Override
     public int hashCode() {
-        return Objects.hash(rule, name, objectExistence);
+        return Objects.hash(rule, name);
     }
 
     @Override

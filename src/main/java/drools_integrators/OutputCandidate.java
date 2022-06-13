@@ -26,5 +26,12 @@ public class OutputCandidate {
         return Objects.hash(before, after, objectExistence);
     }
 
+    @Override
+    public String toString() {
+        String beforeString = before == null ? "null" : before.toString();
+        String afterString  = after == null ? "null" : after.toString();
+        return String.format("%s -> %s", beforeString, afterString);
+    }
+
 
 }

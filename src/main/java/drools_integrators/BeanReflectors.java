@@ -14,10 +14,16 @@ import java.util.Map;
 
 public class BeanReflectors {
 
-    private BeanReflectors() {
+    public BeanReflectors() {
         throw new IllegalStateException("Utility class");
     }
 
+    private static boolean checkPrimitive(Object o){
+        return o instanceof Number ||
+                o instanceof String ||
+                o instanceof Boolean ||
+                o instanceof Enum;
+    }
 
     // extract all gettable fields from object recursively into dictionary of field_name:Object
     public static Map<String, Object> beanProperties(final Object bean, RuleFireListener ruleTracker) {
@@ -33,7 +39,7 @@ public class BeanReflectors {
         }
 
         // check if object itself is a "base" type
-        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean) {
+        if (checkPrimitive(bean)){
             if (verbose) {
                 System.out.printf("\t %s=%s, primitive? %b", name, bean, true);
             }
@@ -75,12 +81,12 @@ public class BeanReflectors {
                 if (verbose) {
                     System.out.printf("\t %s=%s, primitive? %b, %s in Containers? %b",
                             thisName, read,
-                            (read instanceof Number || read instanceof String || read instanceof Boolean),
+                            checkPrimitive(bean),
                             propertyDescriptor.getName(), allowedField);
                 }
 
                 // if the get'ted object is a 'base' type:
-                if ((read instanceof Number || read instanceof String || read instanceof Boolean) && allowedField) {
+                if (checkPrimitive(read) && allowedField) {
                     result.put(thisName, read);
                     if (verbose) {
                         System.out.println("...adding to result");
@@ -138,7 +144,7 @@ public class BeanReflectors {
         String name = prefix.equals("") ? bean.getClass().getName() : prefix;
 
         // check if object itself is a "base" type
-        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean) {
+        if (checkPrimitive(bean)) {
             if (verbose) {
                 System.out.printf("\t %s=%s, primitive? %b", name, bean, true);
             }
@@ -161,7 +167,7 @@ public class BeanReflectors {
             } catch (Exception ex) {
                 //ignore non-readable read method or non-writeable write
                 if (verbose) {
-                    ex.printStackTrace();
+                    //ex.printStackTrace();
                 }
             }
             if (read == null || writeMethod == null) {
@@ -172,10 +178,10 @@ public class BeanReflectors {
                 System.out.printf("%s\t %s=%s, primitive? %b",
                         verbosePrefix,
                         thisName, read.toString(),
-                        (read instanceof Number || read instanceof String || read instanceof Boolean));
+                        checkPrimitive(read));
             }
             // if the get'ted object is a 'base' type:
-            if ((read instanceof Number || read instanceof String || read instanceof Boolean)) {
+            if (checkPrimitive(read)) {
                 result.put(thisName, new FeatureWriter(writeMethod, convertingWrapDynaBean, dynaProperty.getName(), read));
                 if (verbose) {
                     System.out.println("...adding to result");
@@ -220,8 +226,9 @@ public class BeanReflectors {
         final List<Object> result = new ArrayList<>(List.of(bean));
         String name = prefix.equals("") ? bean.getClass().getName() : prefix;
 
+
         // check if object itself is a "base" type
-        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean) {
+        if (checkPrimitive(bean)) {
             if (verbose) {
                 System.out.printf("\t %s=%s, primitive? %b", name, bean, true);
             }
@@ -252,11 +259,11 @@ public class BeanReflectors {
                 System.out.printf("%s\t %s=%s, primitive? %b",
                         verbosePrefix,
                         thisName, read.toString(),
-                        (read instanceof Number || read instanceof String || read instanceof Boolean),
+                        checkPrimitive(read),
                         dynaProperty.getName());
             }
             // if the get'ted object is a 'base' type:
-            if ((read instanceof Number || read instanceof String || read instanceof Boolean)) {
+            if (checkPrimitive(read)) {
                 result.add(read);
                 if (verbose) {
                     System.out.println("...adding to result");

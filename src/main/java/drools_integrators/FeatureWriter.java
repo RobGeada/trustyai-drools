@@ -2,6 +2,7 @@ package drools_integrators;
 
 import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 
+import javax.sound.midi.SysexMessage;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -23,7 +24,7 @@ public class FeatureWriter {
         return String.format(method.toString());
     }
 
-    public Object invoke(String newValue) throws InvocationTargetException, IllegalAccessException {
+    public Object invoke(Object newValue) throws InvocationTargetException, IllegalAccessException {
         return this.method.invoke(this.convertingWrapDynaBean, this.fieldName, newValue);
     }
 }

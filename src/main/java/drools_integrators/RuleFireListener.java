@@ -12,11 +12,13 @@ import org.kie.kogito.explainability.model.Output;
 import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
 
+import javax.sound.midi.SysexMessage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -24,7 +26,7 @@ import static drools_integrators.BeanReflectors.beanProperties;
 import static drools_integrators.ReteTraverser.parseTerminalNode;
 
 public class RuleFireListener extends DefaultAgendaEventListener {
-    private Set<String> lifespanHashes = new HashSet<>();
+    private Set<Integer> lifespanHashes = new HashSet<>();
     private Map<String, Map<String, Object>> beforeHashes = new HashMap<>();
     private Map<String, Map<String, Object>> afterHashes = new HashMap<>();
 
@@ -125,15 +127,16 @@ public class RuleFireListener extends DefaultAgendaEventListener {
             desiredOutputs.put(outputAccessor, new Output(name, Type.BOOLEAN, new Value(o), 1.0));
         } else if (o instanceof String) {
             desiredOutputs.put(outputAccessor, new Output(name, Type.CATEGORICAL, new Value(o), 1.0));
+        } else {
+            desiredOutputs.put(outputAccessor, new Output(name, Type.UNDEFINED, new Value(o), 1.0));
         }
     }
 
     private boolean generalInclusionCheck(String name, Set<String> included, Set<String> excluded, Set<String> inclusionTracker, Set<String> exclusionTracker, boolean contains){
         boolean include = true;
         Predicate<String> predicate = contains ? name::contains : name::equals;
-
         if (!included.isEmpty()) {
-            include= includedRules.stream().anyMatch(predicate);
+            include= included.stream().anyMatch(predicate);
         }
         if (!excluded.isEmpty()) {
             include &= excluded.stream().noneMatch(predicate);
@@ -143,6 +146,7 @@ public class RuleFireListener extends DefaultAgendaEventListener {
         } else {
             exclusionTracker.add(name);
         }
+        //System.out.printf("%s | In inclusions: %s | In exclusions: %s %n", name, included.stream().anyMatch(predicate), excluded.stream().noneMatch(predicate) );
         return include;
     }
 
@@ -190,36 +194,52 @@ public class RuleFireListener extends DefaultAgendaEventListener {
                 this.differences.put(outputAccessor, differenceObject);
             }
             if (beforeHashes.containsKey(key) && afterHashes.containsKey(key)) {
-                if (!lifespanHashes.contains(key)){
+                if (!lifespanHashes.contains(Objects.hash(outputAccessor, key))) {
                     OutputCandidate differenceObject = new OutputCandidate(null, "Created", true);
                     outputAccessor.setObjectExistence(true);
                     this.differences.put(outputAccessor, differenceObject);
-                } else {
-                    Map<String, Object> afterValues = afterHashes.get(key);
-                    Map<String, Object> beforeValues = beforeHashes.get(key);
+                }
+                Map<String, Object> afterValues = afterHashes.get(key);
+                Map<String, Object> beforeValues = beforeHashes.get(key);
 
-                    Set<String> objectKeySets = new HashSet<>(afterValues.keySet());
-                    objectKeySets.addAll(new ArrayList<>(beforeValues.keySet()));
+                Set<String> objectKeySets = new HashSet<>(afterValues.keySet());
+                objectKeySets.addAll(new ArrayList<>(beforeValues.keySet()));
 
-                    for (String objectKey : objectKeySets) {
-                        outputAccessor = new OutputAccessor(event.getMatch().getRule(), objectKey);
-                        if (!beforeValues.containsKey(objectKey)) {
+                for (String objectKey : objectKeySets) {
+                    outputAccessor = new OutputAccessor(event.getMatch().getRule(), objectKey);
+                    //System.out.printf("checking "+objectKey + " " + afterValues.get(objectKey).toString() +": ");
+                    if (!beforeValues.containsKey(objectKey)) {
+                        OutputCandidate differenceObject = new OutputCandidate(null, afterValues.get(objectKey));
+                        //System.out.println(" not in before");
+                        this.differences.put(outputAccessor, differenceObject);
+                    }
+                    if (!afterValues.containsKey(objectKey)) {
+                        //System.out.println(" not in after");
+                        OutputCandidate differenceObject = new OutputCandidate(beforeValues.get(objectKey), null);
+                        this.differences.put(outputAccessor, differenceObject);
+                    }
+                    if (beforeValues.containsKey(objectKey) && afterValues.containsKey(objectKey)) {
+                        //System.out.printf(" in both: ");
+                        if (!beforeValues.get(objectKey).equals(afterValues.get(objectKey))) {
+                            //System.out.println(" update");
+                            OutputCandidate differenceObject = new OutputCandidate(beforeValues.get(objectKey), afterValues.get(objectKey));
+                            this.differences.put(outputAccessor, differenceObject);
+                        } else if (!lifespanHashes.contains(Objects.hash(outputAccessor, objectKey))){
+                            //System.out.printf(" not update, %s not in lifespan %s %n", objectKey, lifespanHashes);
                             OutputCandidate differenceObject = new OutputCandidate(null, afterValues.get(objectKey));
                             this.differences.put(outputAccessor, differenceObject);
-                        }
-                        if (!afterValues.containsKey(objectKey)) {
-                            OutputCandidate differenceObject = new OutputCandidate(beforeValues.get(objectKey), null);
+                            lifespanHashes.add(Objects.hash(outputAccessor, objectKey));
+                        } else if (this.differences.containsKey(outputAccessor) && !this.differences.get(outputAccessor).after.equals(afterValues.get(objectKey))) {
+                            OutputCandidate differenceObject = new OutputCandidate( this.differences.get(outputAccessor).before, afterValues.get(objectKey));
                             this.differences.put(outputAccessor, differenceObject);
-                        }
-                        if (beforeValues.containsKey(objectKey) && afterValues.containsKey(objectKey)) {
-                            if (!beforeValues.get(objectKey).equals(afterValues.get(objectKey))) {
-                                OutputCandidate differenceObject = new OutputCandidate(beforeValues.get(objectKey), afterValues.get(objectKey));
-                                this.differences.put(outputAccessor, differenceObject);
-                            }
+                            //System.out.println(" no rulediff update");
+                        } else {
+                            //System.out.printf(" not update %s , in lifespan%n", objectKey);
                         }
                     }
+
                 }
-                lifespanHashes.add(key);
+                lifespanHashes.add(Objects.hash(outputAccessor, key));
                 beforeHashes.remove(key);
                 afterHashes.remove(key);
             }
@@ -241,7 +261,7 @@ public class RuleFireListener extends DefaultAgendaEventListener {
             }
 
             checkDifferences(event);
-
+            //System.out.println(differences);
             if (parseGraph) {
                 RuleContext ruleContext = new RuleContext(event.getMatch().getRule(),
                         event.hashCode(),
@@ -252,16 +272,29 @@ public class RuleFireListener extends DefaultAgendaEventListener {
 
             // if we've set an output target, capture it here
             if (outputAccessors != null) {
+                //System.out.println("== OUTPUT EXTRACTION ==");
                 for (OutputAccessor outputAccessor : outputAccessors) {
+                    //System.out.printf("  %s: %s %s %s ", outputAccessor, outputAccessor.objectExistence, desiredOutputs.containsKey(outputAccessor), event.getMatch().getRule());
                     if (outputAccessor.objectExistence && !desiredOutputs.containsKey(outputAccessor)){
                         this.addDesiredOutput(outputAccessor, "Not Created");
+                        //System.out.printf("creating fallback | ");
+                    } else if (!desiredOutputs.containsKey(outputAccessor)){
+                        this.addDesiredOutput(outputAccessor, null);
+                        //System.out.printf("creating null out | ");
                     }
                     if (event.getMatch().getRule() == outputAccessor.rule) {
                         if (differences.containsKey(outputAccessor)){
+                            //System.out.printf("actual out | ");
                             this.addDesiredOutput(outputAccessor, differences.get(outputAccessor).after);
+                        } else {
+                            //System.out.printf("missed case 1 | ");
                         }
+                    } else {
+                        //System.out.printf("missed case 2 | ");
                     }
                 }
+                //System.out.println();
+                //System.out.println(desiredOutputs);
             }
         }
     }

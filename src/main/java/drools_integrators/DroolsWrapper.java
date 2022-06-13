@@ -11,6 +11,7 @@ import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieContainerSessionsPool;
 import org.kie.api.runtime.KieSession;
 import org.kie.kogito.explainability.model.Feature;
+import org.kie.kogito.explainability.model.Output;
 import org.kie.kogito.explainability.model.PredictionInput;
 import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
@@ -18,6 +19,7 @@ import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
 import org.kie.kogito.explainability.model.domain.EmptyFeatureDomain;
 import org.kie.kogito.explainability.model.domain.FeatureDomain;
+import org.kie.kogito.explainability.utils.MatrixUtilsExtensions;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -64,6 +66,7 @@ public class DroolsWrapper {
     public HashMap<Integer, GraphNode> graphNodeMap;
 
 
+    // set-based inclusion/exclusion setters
     public void setIncludedOutputRules(Set<String> includedOutputRules) {
         this.includedOutputRules = includedOutputRules;
     }
@@ -87,6 +90,32 @@ public class DroolsWrapper {
     public void setExcludedOutputObjects(Set<String> excludedOutputObjects) {
         this.excludedOutputObjects = excludedOutputObjects;
     }
+
+    // list-based inclusion/exclusion setters
+    public void setIncludedOutputRules(List<String> includedOutputRules) {
+        this.includedOutputRules = new HashSet<>(includedOutputRules);
+    }
+
+    public void setExcludedOutputRules(List<String> excludedOutputRules) {
+        this.excludedOutputRules = new HashSet<>(excludedOutputRules);
+    }
+
+    public void setIncludedOutputFields(List<String> includedOutputFields) {
+        this.includedOutputFields = new HashSet<>(includedOutputFields);
+    }
+
+    public void setExcludedOutputFields(List<String> excludedOutputFields) {
+        this.excludedOutputFields = new HashSet<>(excludedOutputFields);
+    }
+
+    public void setIncludedOutputObjects(List<String> includedOutputObjects) {
+        this.includedOutputObjects = new HashSet<>(includedOutputObjects);
+    }
+
+    public void setExcludedOutputObjects(List<String> excludedOutputObjects) {
+        this.excludedOutputObjects = new HashSet<>(excludedOutputObjects);
+    }
+
 
     public DroolsWrapper(KieContainer kieContainer, String sessionRules, Supplier<List<Object>> inputGenerator) {
         this.inputGenerator = inputGenerator;
@@ -143,8 +172,8 @@ public class DroolsWrapper {
                     f = new Feature(featureName, Type.NUMBER, new Value(subObject), constrained, featureDomain);
                 } else if (subObject instanceof Boolean){
                     f = new Feature(featureName, Type.BOOLEAN, new Value(subObject),constrained, featureDomain);
-                } else if (subObject instanceof String){
-                    f = new Feature(featureName, Type.CATEGORICAL, new Value(subObject),constrained, featureDomain);
+                } else if (subObject instanceof String || subObject instanceof Enum) {
+                    f = new Feature(featureName, Type.CATEGORICAL, new Value(subObject), constrained, featureDomain);
                 } else {
                     f = new Feature(featureName, Type.UNDEFINED, new Value(subObject),constrained, featureDomain);
                 }
@@ -205,11 +234,13 @@ public class DroolsWrapper {
         int outputIDX = 0;
         this.outputAccessors = new ArrayList<>();
         List<String> indeces = new ArrayList<>(List.of("Index"));
+        List<String> ruleNames = new ArrayList<>(List.of("Rule"));
         List<String> fieldNames = new ArrayList<>(List.of("Field Name"));
         List<String> finalValues = new ArrayList<>(List.of("Final Value"));
 
         for (Map.Entry<OutputAccessor, OutputCandidate> outputAccessorOutputCandidate : ruleFireListener.getDifferences().entrySet()) {
             indeces.add(Integer.toString(outputIDX));
+            ruleNames.add(outputAccessorOutputCandidate.getKey().rule.getName());
             fieldNames.add(outputAccessorOutputCandidate.getKey().name);
             finalValues.add(outputAccessorOutputCandidate.getValue().after.toString());
             this.outputAccessors.add(outputAccessorOutputCandidate.getKey());
@@ -218,17 +249,18 @@ public class DroolsWrapper {
 
         if (display){
             int largestInt = indeces.stream().mapToInt(String::length).max().getAsInt()+1;
+            int largestRule = ruleNames.stream().mapToInt(String::length).max().getAsInt()+1;
             int largestFN = fieldNames.stream().mapToInt(String::length).max().getAsInt()+1;
             int largestFV = finalValues.stream().mapToInt(String::length).max().getAsInt()+1;
-            String fmtStr = String.format("%%%ds | %%%ds | %%%ds%n", largestInt, largestFN, largestFV);
+            String fmtStr = String.format("%%%ds | %%%ds | %%%ds | %%%ds%n", largestInt, largestRule, largestFN, largestFV);
             System.out.println("=== OUTPUT CANDIDATES "+
-                    StringUtils.repeat("=",Math.max(0, largestInt+largestFN+largestFV - 15)));
-            System.out.printf(fmtStr, indeces.get(0), fieldNames.get(0), finalValues.get(0));
-            System.out.println(StringUtils.repeat("-",largestInt+largestFN+largestFV + 6));
+                    StringUtils.repeat("=",Math.max(0, largestInt+largestRule+largestFN+largestFV - 15)));
+            System.out.printf(fmtStr, indeces.get(0), ruleNames.get(0), fieldNames.get(0), finalValues.get(0));
+            System.out.println(StringUtils.repeat("-",largestInt+largestRule+largestFN+largestFV + 6));
             for (int i=1; i<indeces.size(); i++){
-                System.out.printf(fmtStr, indeces.get(i), fieldNames.get(i), finalValues.get(i));
+                System.out.printf(fmtStr, indeces.get(i), ruleNames.get(i), fieldNames.get(i), finalValues.get(i));
             }
-            System.out.println(StringUtils.repeat("=", largestInt+largestFN+largestFV + 6));
+            System.out.println(StringUtils.repeat("=", largestInt+largestRule+largestFN+largestFV + 6));
         }
     }
 
@@ -266,13 +298,11 @@ public class DroolsWrapper {
         this.graphNodeMap = dpc.graphNodeMap;
         System.out.println("Included Objects: "+ruleFireListener.getActualIncludedObjects());
         System.out.println("Included Fields: "+ruleFireListener.getActualIncludedFields());
-        try {
-            System.out.println("Output: " + new ArrayList<>(ruleFireListener.getDesiredOutputs().values()).get(0).getValue() + "\n");
-            return new PredictionOutput(new ArrayList<>(ruleFireListener.getDesiredOutputs().values()));
-        } catch (IndexOutOfBoundsException e){
-            System.out.println("Output: INVALID");
-            return new PredictionOutput(null);
-        }
+        System.out.println(ruleFireListener.getDesiredOutputs());
+        PredictionOutput po = new PredictionOutput(new ArrayList<>(ruleFireListener.getDesiredOutputs().values()));
+        System.out.println("Output: " + po.getOutputs().stream().map(o -> o.getValue().toString()).collect(Collectors.toList()) + "\n");
+        return po;
+
     }
 
     public PredictionProvider wrap(){
@@ -287,7 +317,7 @@ public class DroolsWrapper {
                         if (f.getName().equals(writerContainerEntry.getKey().getName())){
                             FeatureWriter featureWriter = writerContainerEntry.getValue();
                             try {
-                                featureWriter.invoke(f.getValue().asString());
+                                featureWriter.invoke(f.getValue().getUnderlyingObject());
                             } catch (IllegalAccessException | InvocationTargetException e) {
                                 throw new RuntimeException(e);
                             }

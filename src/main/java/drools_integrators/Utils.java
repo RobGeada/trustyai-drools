@@ -6,6 +6,7 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import org.jgrapht.nio.dot.DOTExporter;
+import org.kie.kogito.explainability.model.PredictionOutput;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -34,7 +35,6 @@ public class Utils {
         }
         return output;
     }
-
 
     public static void graphCount(Graph<GraphNode, DefaultEdge> graph){
         double[] calls = new double[2];
