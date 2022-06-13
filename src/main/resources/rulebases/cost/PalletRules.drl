@@ -43,7 +43,7 @@ rule "Create PalletForIndividual"
   		pp.setPalletType($p.getTransportType());
   		pp.addContent($p,new Long(1));
   		insert(pp);
-  		$c.getPallets().add(pp);
+  		$c.addPallet(pp);
   		$l.setQuantityLeft($l.getQuantityLeft()-1);
   		update($l);
 end
@@ -60,7 +60,7 @@ rule "Create PalletForBulkMore1400Kg"
   		pp.setPalletType($p.getTransportType());
   		pp.addContent($p,new Long(1400));
   		insert(pp);
-  		$c.getPallets().add(pp);
+  		$c.addPallet(pp);
   		$l.setWeightLeft($l.getWeightLeft()-1400);
   		update($l);
 end
@@ -76,7 +76,7 @@ rule "Create PalletForBulkless1400Kg"
   		pp.setPalletType($p.getTransportType());
   		pp.addContent($p,$l.getWeightLeft());
   		insert(pp);
-  		$c.getPallets().add(pp);
+  		$c.addPallet(pp);
   		$l.setWeightLeft(0);
   		update($l);
 end
@@ -84,6 +84,7 @@ end
 rule  "Create Empty Pallet"
 	ruleflow-group "distribution"
 when
+    $c : CostCalculationRequest()
 	not (Pallet (palletType == Product.transportType_pallet,full ==false))
 then
 	Pallet p = new Pallet();
@@ -114,11 +115,13 @@ end
 
 rule "FillPalletIfNoProductGoesIn"
 	ruleflow-group "distribution"
-    when   
+    when
+        $c : CostCalculationRequest()
     	CalculatedElement($min : doubleValue ,key=="minValue.product")
         $p : Pallet(heightLeft!= 2.0,$hl : heightLeft < $min ,full ==false,palletType == Product.transportType_pallet) 
     then
     	$p.setFull(true);
+    	$c.addPallet($p);
     	//System.out.println("MinValue="+$min);
     	update($p);
 end

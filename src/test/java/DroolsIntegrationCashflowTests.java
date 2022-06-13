@@ -1,6 +1,4 @@
-import drools_integrators.BeanReflectors;
 import drools_integrators.DroolsWrapper;
-import jdk.jshell.spi.SPIResolutionException;
 import org.junit.Test;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
@@ -8,7 +6,6 @@ import org.kie.kogito.explainability.local.counterfactual.CounterfactualConfig;
 import org.kie.kogito.explainability.local.counterfactual.CounterfactualExplainer;
 import org.kie.kogito.explainability.local.counterfactual.CounterfactualResult;
 import org.kie.kogito.explainability.local.counterfactual.SolverConfigBuilder;
-import org.kie.kogito.explainability.local.counterfactual.entities.CounterfactualEntity;
 import org.kie.kogito.explainability.local.shap.ShapConfig;
 import org.kie.kogito.explainability.local.shap.ShapKernelExplainer;
 import org.kie.kogito.explainability.local.shap.ShapResults;
@@ -22,11 +19,7 @@ import org.kie.kogito.explainability.model.PredictionInput;
 import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
 import org.kie.kogito.explainability.model.SimplePrediction;
-import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
-import org.kie.kogito.explainability.model.domain.CategoricalFeatureDomain;
-import org.kie.kogito.explainability.model.domain.NumericalFeatureDomain;
-import org.kie.kogito.explainability.model.domain.ObjectFeatureDomain;
 import org.optaplanner.core.config.solver.EnvironmentMode;
 import org.optaplanner.core.config.solver.SolverConfig;
 import org.optaplanner.core.config.solver.termination.TerminationConfig;
@@ -39,14 +32,11 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static rulebases.cashflow.CashFlowMain.date;
 
@@ -55,35 +45,9 @@ public class DroolsIntegrationCashflowTests {
     KieServices ks = KieServices.Factory.get();
     KieContainer kieContainer = ks.getKieClasspathContainer();
 
-    // rui's counterfactual search helper function
-    private CounterfactualResult runCounterfactualSearch(Long randomSeed, List<Output> goal,
-                                                         List<Feature> features,
-                                                         PredictionProvider model,
-                                                         double goalThresold) throws InterruptedException, ExecutionException, TimeoutException {
-        final TerminationConfig terminationConfig = new TerminationConfig().withScoreCalculationCountLimit(30_000L);
-        final SolverConfig solverConfig = SolverConfigBuilder
-                .builder().withTerminationConfig(terminationConfig).build();
-        solverConfig.setRandomSeed(randomSeed);
-        solverConfig.setEnvironmentMode(EnvironmentMode.REPRODUCIBLE);
-        final CounterfactualConfig counterfactualConfig = new CounterfactualConfig();
-        counterfactualConfig.withSolverConfig(solverConfig).withGoalThreshold(goalThresold);
-        final CounterfactualExplainer explainer = new CounterfactualExplainer(counterfactualConfig);
-        final PredictionInput input = new PredictionInput(features);
-        PredictionOutput output = new PredictionOutput(goal);
-        Prediction prediction =
-                new CounterfactualPrediction(input,
-                        output,
-                        null,
-                        UUID.randomUUID(),
-                        600L);
-        return explainer.explainAsync(prediction, model)
-                .get(11L, TimeUnit.MINUTES);
-    }
-
-
     // automatically wrap the drools model into a prediction provider + test counterfactual generation
     @Test
-    public void testAutoWrapperSHAP() throws ExecutionException, InterruptedException {
+    public void cashflowSHAPExplanation() throws ExecutionException, InterruptedException {
         // build the function to supply objects into the model
         Supplier<List<Object>> objectSupplier = () -> {
             try {
@@ -112,7 +76,7 @@ public class DroolsIntegrationCashflowTests {
         droolsWrapper.setExcludedOutputFields(List.of("date"));
 
         droolsWrapper.generateOutputCandidates(true);
-        droolsWrapper.selectOutputIndecesFromCandidates(List.of(27));
+        droolsWrapper.selectOutputIndicesFromCandidates(List.of(5));
 
         List<PredictionInput> background = new ArrayList<>();
         for (int i=0; i<1; i++) {
@@ -140,6 +104,5 @@ public class DroolsIntegrationCashflowTests {
         ShapKernelExplainer ske = new ShapKernelExplainer(sc);
         ShapResults results = ske.explainAsync(prediction, wrappedModel).get();
         System.out.println(results.toString());
-
     }
 }

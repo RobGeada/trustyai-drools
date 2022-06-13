@@ -1,17 +1,14 @@
 package drools_integrators;
 
-import org.apache.commons.math3.util.Pair;
 import org.drools.core.common.InternalWorkingMemory;
 import org.drools.core.util.StringUtils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
-import org.kie.api.definition.rule.Rule;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieContainerSessionsPool;
 import org.kie.api.runtime.KieSession;
 import org.kie.kogito.explainability.model.Feature;
-import org.kie.kogito.explainability.model.Output;
 import org.kie.kogito.explainability.model.PredictionInput;
 import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
@@ -19,7 +16,8 @@ import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
 import org.kie.kogito.explainability.model.domain.EmptyFeatureDomain;
 import org.kie.kogito.explainability.model.domain.FeatureDomain;
-import org.kie.kogito.explainability.utils.MatrixUtilsExtensions;
+import rulebases.cost.CostCalculationRequest;
+import rulebases.cost.Pallet;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -35,8 +33,6 @@ import java.util.stream.Collectors;
 
 import static drools_integrators.BeanReflectors.beanContainers;
 import static drools_integrators.BeanReflectors.beanWriteProperties;
-import static drools_integrators.Utils.graphCount;
-import static drools_integrators.Utils.printGraph;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 public class DroolsWrapper {
@@ -51,7 +47,7 @@ public class DroolsWrapper {
     private Supplier<List<Object>> inputGenerator;
     private List<OutputAccessor> outputAccessors;
 
-    private List<Integer>outputIndeces;
+    private List<Integer> outputIndices;
 
     private final String sessionRules;
 
@@ -64,6 +60,9 @@ public class DroolsWrapper {
     public int inputNumber = 0;
     public Graph<GraphNode, DefaultEdge> graph;
     public HashMap<Integer, GraphNode> graphNodeMap;
+
+    public List<PredictionInput> allPis = new ArrayList<>();
+    public List<PredictionOutput> allPos = new ArrayList<>();
 
 
     // set-based inclusion/exclusion setters
@@ -265,8 +264,8 @@ public class DroolsWrapper {
     }
 
     // select the output indececs of the output candidate accessor dictionary to select outputs from
-    public void selectOutputIndecesFromCandidates(List<Integer> outputIndeces){
-        this.outputIndeces = outputIndeces;
+    public void selectOutputIndicesFromCandidates(List<Integer> outputIndices){
+        this.outputIndices = outputIndices;
     }
 
 
@@ -283,9 +282,9 @@ public class DroolsWrapper {
                 includedOutputRules, excludedOutputRules,
                 includedOutputFields, excludedOutputFields,
                 includedOutputObjects, excludedOutputObjects,
-                dpc, true);
+                dpc, false);
         ruleFireListener.setInputNumber(this.inputNumber);
-        ruleFireListener.setOutputTargets(this.outputIndeces.stream()
+        ruleFireListener.setOutputTargets(this.outputIndices.stream()
                 .map(this.outputAccessors::get)
                 .collect(Collectors.toList()));
         session.addEventListener(ruleFireListener);
@@ -295,13 +294,19 @@ public class DroolsWrapper {
         }
         session.fireAllRules();
         session.dispose();
+        for (Object o : droolsInputs){
+            if (o instanceof CostCalculationRequest){
+                CostCalculationRequest ccr = (CostCalculationRequest) o;
+                for (Pallet p : ccr.getPallets()){
+                    System.out.println(p);
+                }
+            }
+        }
         this.graphNodeMap = dpc.graphNodeMap;
-        System.out.println("Included Objects: "+ruleFireListener.getActualIncludedObjects());
-        System.out.println("Included Fields: "+ruleFireListener.getActualIncludedFields());
-        System.out.println(ruleFireListener.getDesiredOutputs());
-        PredictionOutput po = new PredictionOutput(new ArrayList<>(ruleFireListener.getDesiredOutputs().values()));
-        System.out.println("Output: " + po.getOutputs().stream().map(o -> o.getValue().toString()).collect(Collectors.toList()) + "\n");
-        return po;
+        //System.out.println("Included Objects: "+ruleFireListener.getActualIncludedObjects());
+        //System.out.println("Included Fields: "+ruleFireListener.getActualIncludedFields());
+        //System.out.println(ruleFireListener.getDesiredOutputs());
+        return new PredictionOutput(new ArrayList<>(ruleFireListener.getDesiredOutputs().values()));
 
     }
 
@@ -309,9 +314,9 @@ public class DroolsWrapper {
         return inputs -> supplyAsync(() -> {
             List<PredictionOutput> outputs = new LinkedList<>();
             for (PredictionInput predictionInput : inputs){
+                //allPis.add(predictionInput);
                 List<Object> droolsInputs = this.inputGenerator.get();
                 HashMap<Feature, FeatureWriter> featureWriterMap = featureExtractor(droolsInputs);
-                System.out.println("Input:  " + predictionInput.getFeatures().stream().map(f -> String.format("%s", f.getValue())).collect(Collectors.toList()));
                 for (Feature f : predictionInput.getFeatures()){
                     for (Map.Entry<Feature, FeatureWriter> writerContainerEntry : featureWriterMap.entrySet()){
                         if (f.getName().equals(writerContainerEntry.getKey().getName())){
@@ -324,9 +329,15 @@ public class DroolsWrapper {
                         }
                     }
                 }
-                outputs.add(runSession(droolsInputs));
+                PredictionOutput po = runSession(droolsInputs);
+//                allPos.add(po);
+                outputs.add(po);
             }
-
+//            for (int i=0; i<inputs.size(); i++){
+//                String inputStr = "Input:  " + inputs.get(i).getFeatures().stream().map(f -> String.format("%s", f.getValue())).collect(Collectors.toList());
+//                String outputStr = "Output: "+ outputs.get(i).getOutputs().stream().map(o -> o.getValue().toString()).collect(Collectors.toList());
+//                System.out.println(inputStr + "\n" + outputStr);
+//            }
             return outputs;
         });
     }

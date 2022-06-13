@@ -38,17 +38,17 @@ end
 rule PrintChildBusPass when
     ChildBusPass()
 then
-    System.out.println( "Child Bus Pass" );
+    //System.out.println( "Child Bus Pass" );
 end
 
 rule PrintNoChildBusPass when
     ChildBusPass()
 then
-    System.out.println( "No Child Bus Pass" );
+    //System.out.println( "No Child Bus Pass" );
 end
 
 rule PrintAdultBussPass when
     AdultBusPass()
 then
-    System.out.println( "Adult Bus Pass" );
+    //System.out.println( "Adult Bus Pass" );
 end

@@ -41,5 +41,5 @@ when
        ap : AccountPeriod()
        $acc : Account( )
 then
-       System.out.println( "Account Number " + $acc.accountNo + " balance " + $acc.balance );
+       //System.out.println( "Account Number " + $acc.accountNo + " balance " + $acc.balance );
 end

@@ -15,6 +15,8 @@ public class CostCalculationRequest {
     private double totalHandlingCost;
     private double totalTransportCost;
 
+    private int numPallets;
+
     public double getTotalCost() {
         return totalCost;
     }
@@ -44,8 +46,20 @@ public class CostCalculationRequest {
         return pallets;
     }
 
+    public void addPallet(Pallet p){
+        this.pallets.add(p);
+        this.numPallets += 1;
+    }
+
     public void setPallets(List<Pallet> pallets) {
         this.pallets = pallets;
+        this.numPallets = pallets.size();
+    }
+
+
+    public int getNumPallets() {
+        numPallets = this.pallets.size();
+        return numPallets;
     }
 
     public List<CostElement> getCostElements() {

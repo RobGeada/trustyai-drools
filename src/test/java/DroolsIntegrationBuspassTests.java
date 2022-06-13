@@ -8,19 +8,13 @@ import org.kie.kogito.explainability.local.counterfactual.CounterfactualExplaine
 import org.kie.kogito.explainability.local.counterfactual.CounterfactualResult;
 import org.kie.kogito.explainability.local.counterfactual.SolverConfigBuilder;
 import org.kie.kogito.explainability.local.counterfactual.entities.CounterfactualEntity;
-import org.kie.kogito.explainability.local.shap.ShapConfig;
-import org.kie.kogito.explainability.local.shap.ShapKernelExplainer;
-import org.kie.kogito.explainability.local.shap.ShapResults;
 import org.kie.kogito.explainability.model.CounterfactualPrediction;
 import org.kie.kogito.explainability.model.Feature;
-import org.kie.kogito.explainability.model.FeatureFactory;
 import org.kie.kogito.explainability.model.Output;
-import org.kie.kogito.explainability.model.PerturbationContext;
 import org.kie.kogito.explainability.model.Prediction;
 import org.kie.kogito.explainability.model.PredictionInput;
 import org.kie.kogito.explainability.model.PredictionOutput;
 import org.kie.kogito.explainability.model.PredictionProvider;
-import org.kie.kogito.explainability.model.SimplePrediction;
 import org.kie.kogito.explainability.model.Type;
 import org.kie.kogito.explainability.model.Value;
 import org.kie.kogito.explainability.model.domain.NumericalFeatureDomain;
@@ -71,7 +65,7 @@ public class DroolsIntegrationBuspassTests {
 
     // automatically wrap the drools model into a prediction provider + test counterfactual generation
     @Test
-    public void testAutoWrapperCF() throws ExecutionException, InterruptedException, TimeoutException {
+    public void buspassCF() throws ExecutionException, InterruptedException, TimeoutException {
         // build the function to supply objects into the model
         Supplier<List<Object>> objectSupplier = () -> {
             Person p = new Person("Yoda", 10);
@@ -90,7 +84,7 @@ public class DroolsIntegrationBuspassTests {
         }
         PredictionInput samplePI = new PredictionInput(new ArrayList<>(droolsWrapper.featureExtractor(objectSupplier.get()).keySet()));
         droolsWrapper.generateOutputCandidates(true);
-        droolsWrapper.selectOutputIndecesFromCandidates(List.of(10));
+        droolsWrapper.selectOutputIndicesFromCandidates(List.of(10));
 
         // wrap model into predictionprovider
         PredictionProvider wrappedModel = droolsWrapper.wrap();
@@ -100,7 +94,7 @@ public class DroolsIntegrationBuspassTests {
         // run counterfactual
         List<Output> goal = new ArrayList<>();
         goal.add(new Output("rulebases.buspass.ChildBusPass_5", Type.CATEGORICAL, new Value("Not Created"), 0.0d));
-        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .1);
+        CounterfactualResult result = runCounterfactualSearch(0L, goal, samplePI.getFeatures(), wrappedModel, .01);
         System.out.println(result.getEntities().stream().map(CounterfactualEntity::asFeature).collect(Collectors.toList()));
         System.out.println(result.isValid());
         System.out.println(result.getOutput().get(0).getOutputs());
