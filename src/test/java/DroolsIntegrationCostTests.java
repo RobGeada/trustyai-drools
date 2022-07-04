@@ -91,11 +91,11 @@ public class DroolsIntegrationCostTests {
         Product gravelProduct = new Product("Gravel", 0.0, 0.0, 0.0, 0.0, Product.transportType_bulkt);
         Product furnitureProduct = new Product("Furniture", 0.0, 0.0, 0.0, 0.0, Product.transportType_individual);
 
-        order.getOrderLines().add(new OrderLine(0, drillProduct));
+        order.getOrderLines().add(new OrderLine(1000, drillProduct));
         order.getOrderLines().add(new OrderLine(30000, screwDriverProduct));
-        order.getOrderLines().add(new OrderLine(0.0, sandProduct));
-        order.getOrderLines().add(new OrderLine(0.0, gravelProduct));
-        order.getOrderLines().add(new OrderLine(0, furnitureProduct));
+        order.getOrderLines().add(new OrderLine(35000.0, sandProduct));
+        order.getOrderLines().add(new OrderLine(14000.0, gravelProduct));
+        order.getOrderLines().add(new OrderLine(500, furnitureProduct));
         return order;
     }
 

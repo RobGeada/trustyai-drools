@@ -65,50 +65,51 @@
     <orderEntry type="library" name="Maven: commons-beanutils:commons-beanutils:1.9.4" level="project" />
     <orderEntry type="library" name="Maven: commons-logging:commons-logging:1.2" level="project" />
     <orderEntry type="library" name="Maven: commons-collections:commons-collections:3.2.2" level="project" />
-    <orderEntry type="library" name="Maven: org.kie.kogito:explainability-core:1.20.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.kie.kogito:explainability-core:1.23.0.Final" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.12.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-csv:1.8" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.13.1" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.13.1" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.13.1" level="project" />
-    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-quarkus:8.20.0.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.quarkus:quarkus-core:2.7.3.Final" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.13.3" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.13.3" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.13.3" level="project" />
+    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-quarkus:8.23.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.quarkus:quarkus-core:2.10.0.Final" level="project" />
     <orderEntry type="library" name="Maven: jakarta.annotation:jakarta.annotation-api:1.3.5" level="project" />
     <orderEntry type="library" name="Maven: jakarta.enterprise:jakarta.enterprise.cdi-api:2.0.2" level="project" />
     <orderEntry type="library" name="Maven: jakarta.el:jakarta.el-api:3.0.3" level="project" />
     <orderEntry type="library" name="Maven: jakarta.interceptor:jakarta.interceptor-api:1.2.5" level="project" />
     <orderEntry type="library" name="Maven: jakarta.ejb:jakarta.ejb-api:3.2.6" level="project" />
     <orderEntry type="library" name="Maven: jakarta.inject:jakarta.inject-api:1.0" level="project" />
-    <orderEntry type="library" name="Maven: io.quarkus:quarkus-ide-launcher:2.7.3.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.quarkus:quarkus-development-mode-spi:2.7.3.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.config:smallrye-config:2.9.1" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.config:smallrye-config-core:2.9.1" level="project" />
+    <orderEntry type="library" name="Maven: io.quarkus:quarkus-ide-launcher:2.10.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.quarkus:quarkus-development-mode-spi:2.10.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.config:smallrye-config:2.10.1" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.config:smallrye-config-core:2.10.1" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.microprofile.config:microprofile-config-api:2.0.1" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-annotation:1.10.0" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-expression:1.10.0" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-function:1.10.0" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-constraint:1.10.0" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-classloader:1.10.0" level="project" />
-    <orderEntry type="library" name="Maven: org.ow2.asm:asm:9.2" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.config:smallrye-config-common:2.9.1" level="project" />
-    <orderEntry type="library" name="Maven: org.jboss.logging:jboss-logging:3.4.3.Final" level="project" />
-    <orderEntry type="library" name="Maven: org.jboss.logmanager:jboss-logmanager-embedded:1.0.9" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-annotation:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-expression:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-function:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-constraint:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-classloader:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: org.ow2.asm:asm:9.3" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.config:smallrye-config-common:2.10.1" level="project" />
+    <orderEntry type="library" name="Maven: org.jboss.logging:jboss-logging:3.5.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.jboss.logmanager:jboss-logmanager-embedded:1.0.10" level="project" />
     <orderEntry type="library" name="Maven: org.jboss.logging:jboss-logging-annotations:2.2.1.Final" level="project" />
     <orderEntry type="library" name="Maven: org.jboss.threads:jboss-threads:3.4.2.Final" level="project" />
     <orderEntry type="library" name="Maven: org.jboss.slf4j:slf4j-jboss-logmanager:1.1.0.Final" level="project" />
-    <orderEntry type="library" name="Maven: org.graalvm.sdk:graal-sdk:21.3.1" level="project" />
+    <orderEntry type="library" name="Maven: org.graalvm.sdk:graal-sdk:22.1.0" level="project" />
     <orderEntry type="library" name="Maven: org.wildfly.common:wildfly-common:1.5.4.Final-format-001" level="project" />
-    <orderEntry type="library" name="Maven: io.quarkus:quarkus-bootstrap-runner:2.7.3.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-io:1.10.0" level="project" />
+    <orderEntry type="library" name="Maven: io.quarkus:quarkus-bootstrap-runner:2.10.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.smallrye.common:smallrye-common-io:1.12.0" level="project" />
+    <orderEntry type="library" name="Maven: io.github.crac:org-crac:0.1.1" level="project" />
     <orderEntry type="library" name="Maven: io.quarkus:quarkus-fs-util:0.0.9" level="project" />
-    <orderEntry type="library" name="Maven: io.quarkus:quarkus-arc:2.7.3.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.quarkus.arc:arc:2.7.3.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.quarkus:quarkus-arc:2.10.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.quarkus.arc:arc:2.10.0.Final" level="project" />
     <orderEntry type="library" name="Maven: jakarta.transaction:jakarta.transaction-api:1.3.3" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api:1.2" level="project" />
-    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-core:8.20.0.Final" level="project" />
-    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-core-impl:8.20.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-core:8.23.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-core-impl:8.23.0.Final" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-math3:3.6.1" level="project" />
-    <orderEntry type="library" name="Maven: io.micrometer:micrometer-core:1.8.3" level="project" />
+    <orderEntry type="library" name="Maven: io.micrometer:micrometer-core:1.9.0" level="project" />
     <orderEntry type="library" name="Maven: org.hdrhistogram:HdrHistogram:2.1.12" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.latencyutils:LatencyUtils:2.0.3" level="project" />
     <orderEntry type="library" name="Maven: jakarta.xml.bind:jakarta.xml.bind-api:2.3.3" level="project" />
@@ -117,13 +118,8 @@
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.glassfish.jaxb:txw2:2.3.3-b02" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: com.sun.istack:istack-commons-runtime:3.0.10" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: com.sun.activation:jakarta.activation:1.2.1" level="project" />
-    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-constraint-streams:8.20.0.Final" level="project" />
-    <orderEntry type="library" name="Maven: org.drools:drools-engine:8.20.0.Beta" level="project" />
-    <orderEntry type="library" name="Maven: org.drools:drools-kiesession:8.20.0.Beta" level="project" />
-    <orderEntry type="library" name="Maven: org.drools:drools-tms:8.20.0.Beta" level="project" />
-    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-constraint-drl:8.20.0.Final" level="project" />
-    <orderEntry type="library" name="Maven: org.drools:drools-wiring-static:8.20.0.Beta" level="project" />
-    <orderEntry type="library" name="Maven: org.drools:drools-wiring-api:8.20.0.Beta" level="project" />
+    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-constraint-streams-bavet:8.23.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.optaplanner:optaplanner-constraint-streams-common:8.23.0.Final" level="project" />
     <orderEntry type="library" name="Maven: org.jboss:jandex:2.4.2.Final" level="project" />
   </component>
 </module>

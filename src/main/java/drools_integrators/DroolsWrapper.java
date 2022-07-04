@@ -268,6 +268,9 @@ public class DroolsWrapper {
         this.outputIndices = outputIndices;
     }
 
+    public PredictionInput getSamplePredictionInput(){
+        return new PredictionInput(new ArrayList<>(this.featureExtractor(this.inputGenerator.get()).keySet()));
+    }
 
     private PredictionOutput runSession(List<Object> droolsInputs){
         KieSession session = this.pool.newKieSession(this.sessionRules);
@@ -294,14 +297,14 @@ public class DroolsWrapper {
         }
         session.fireAllRules();
         session.dispose();
-        for (Object o : droolsInputs){
-            if (o instanceof CostCalculationRequest){
-                CostCalculationRequest ccr = (CostCalculationRequest) o;
-                for (Pallet p : ccr.getPallets()){
-                    System.out.println(p);
-                }
-            }
-        }
+//        for (Object o : droolsInputs){
+//            if (o instanceof CostCalculationRequest){
+//                CostCalculationRequest ccr = (CostCalculationRequest) o;
+//                for (Pallet p : ccr.getPallets()){
+//                    System.out.println(p);
+//                }
+//            }
+//        }
         this.graphNodeMap = dpc.graphNodeMap;
         //System.out.println("Included Objects: "+ruleFireListener.getActualIncludedObjects());
         //System.out.println("Included Fields: "+ruleFireListener.getActualIncludedFields());
